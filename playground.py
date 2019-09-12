@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from create_dataset import NUM_EPISODES, MAX_ITER
 
-path = "./log/data.txt"
+path = "./data/data.txt"
 
 
 # def playground():

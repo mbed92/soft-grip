@@ -21,8 +21,8 @@ class RNN(tf.keras.Model):
         self.LSTM = tf.keras.layers.CuDNNLSTM(input_dim)
         self.estimator = tf.keras.Sequential([
             tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(16, tf.nn.relu, dtype=tf.float64,
-                                  kernel_initializer=tf.keras.initializers.glorot_normal()),
+            tf.keras.layers.Dense(64,  tf.nn.relu, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal()),
+            tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Dense(1, None, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal())
         ])
 
@@ -33,7 +33,7 @@ class RNN(tf.keras.Model):
 
 
 def do_regression(args):
-    data = np.loadtxt(args.log_path)
+    data = np.loadtxt(args.data_path)
     i, k = data.shape
     idx = int(0.9 * i)
     y, x = data[:idx, -1], data[:idx, :-1]
@@ -42,45 +42,75 @@ def do_regression(args):
     test_ds = tf.data.Dataset.from_tensor_slices((tx, ty)).batch(args.batch_size)
 
     os.makedirs(args.results, exist_ok=True)
-    train_writer = tf.contrib.summary.create_file_writer(args.results)
+    train_writer, test_writer = tf.contrib.summary.create_file_writer(args.results), tf.contrib.summary.create_file_writer(args.results)
     train_writer.set_as_default()
 
-    model = RNN(32)
-    loss_object = tf.keras.losses.MeanSquaredError()
-    optimizer = tf.keras.optimizers.Adam()
+    model = RNN(200)
 
+    regularizer = tf.keras.regularizers.l2(1e-5)
+    optimizer = tf.keras.optimizers.Adam(4e-5)
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     test_loss = tf.keras.metrics.Mean(name='test_loss')
+    ckpt = tf.train.Checkpoint(optimizer=optimizer,
+                               model=model,
+                               optimizer_step=tf.train.get_or_create_global_step())
+    ckpt_man = tf.train.CheckpointManager(ckpt, args.results, max_to_keep=3)
+
+    eta = tf.contrib.eager.Variable(1e-5)
+    eta_value = tf.train.exponential_decay(
+        1e-5,
+        tf.train.get_or_create_global_step(),
+        args.epochs,
+        0.99)
+    eta.assign(eta_value())
+
+    n, k = 0, 0
     for epoch in range(args.epochs):
+        train_writer.set_as_default()
         for x_train, y_train in train_ds:
             with tf.GradientTape() as tape:
                 predictions = model(x_train)
-                loss = loss_object(y_train, predictions)
-            gradients = tape.gradient(loss, model.trainable_variables)
+                rms = tf.keras.losses.mean_squared_error(y_train, predictions)
+                reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
+                total = rms + reg
+            gradients = tape.gradient(total, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-            train_loss(loss)
+            train_loss(rms)
 
-            tf.contrib.summary.scalar('train_loss', train_loss.result())
-            train_writer.flush()
+            with tf.contrib.summary.always_record_summaries():
+                tf.contrib.summary.scalar('train_loss', train_loss.result(), step=n)
+                train_writer.flush()
+            n += 1
 
+        test_writer.set_as_default()
         for x_test, y_test in test_ds:
             predictions = model(x_test)
-            t_loss = loss_object(y_test, predictions)
-            test_loss(t_loss)
+            rms = tf.keras.losses.mean_squared_error(y_test, predictions)
+            test_loss(rms)
+            with tf.contrib.summary.always_record_summaries():
+                tf.contrib.summary.scalar('test_loss', test_loss.result(), step=k)
+                test_writer.flush()
+
+            k += 1
 
         template = 'Epoch {}, Loss: {}, Test Loss: {}'
         print(template.format(epoch + 1, train_loss.result(), test_loss.result()))
+        eta.assign(eta_value())
 
         # Reset the metrics for the next epoch
         train_loss.reset_states()
         test_loss.reset_states()
 
+        # save each 100 epochs
+        if epoch % 100 == 0:
+            ckpt_man.save()
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--log-path', type=str, default="./log/log.txt")
-    parser.add_argument('--results', type=str, default="./log")
-    parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=256)
+    parser.add_argument('--data-path', type=str, default="./data/data.txt")
+    parser.add_argument('--results', type=str, default="./data/log")
+    parser.add_argument('--epochs', type=int, default=9999)
+    parser.add_argument('--batch-size', type=int, default=200)
     args, _ = parser.parse_known_args()
     do_regression(args)

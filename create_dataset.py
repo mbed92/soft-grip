@@ -13,7 +13,7 @@ DIVISOR = 90
 def log_into_file(args):
     env_spec = ManEnv.get_std_spec(args)
     env = ManEnv(**env_spec)
-    file = open(args.log_path, 'w')
+    file = open(args.data_path, 'w')
 
     for _ in range(NUM_EPISODES):
         env.reset()
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--sim-step', type=int, default=5)
     parser.add_argument('--sim-start', type=int, default=1)
-    parser.add_argument('--log-path', type=str, default="./log/data.txt")
+    parser.add_argument('--data-path', type=str, default="./data/data.txt")
     parser.add_argument('--mujoco-model-path', type=str,
                         default='/home/mbed/.mujoco/mujoco200/model/soft_experiments.xml')
     args, _ = parser.parse_known_args()
