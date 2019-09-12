@@ -5,9 +5,9 @@ from argparse import ArgumentParser
 from environment import ManEnv
 import numpy as np
 
-NUM_EPISODES = 10
-MAX_ITER = 100
-DIVISOR = 45
+NUM_EPISODES = 100
+MAX_ITER = 200
+DIVISOR = 90
 
 
 def log_into_file(args):
@@ -31,7 +31,6 @@ def log_into_file(args):
                 env.loose_hand()
             else:
                 env.close_hand()
-
     file.close()
 
 

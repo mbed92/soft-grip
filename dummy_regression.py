@@ -78,7 +78,7 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--log-path', type=str, default="./log.txt")
+    parser.add_argument('--log-path', type=str, default="./log/log.txt")
     parser.add_argument('--results', type=str, default="./log")
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=256)
