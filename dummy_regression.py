@@ -108,7 +108,7 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path', type=str, default="./data/data.txt")
+    parser.add_argument('--data-path', type=str, default="./data/data_softbox.txt")
     parser.add_argument('--results', type=str, default="./data/log")
     parser.add_argument('--epochs', type=int, default=9999)
     parser.add_argument('--batch-size', type=int, default=200)

@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--sim-step', type=int, default=5)
     parser.add_argument('--sim-start', type=int, default=1)
-    parser.add_argument('--data-path', type=str, default="./data/data.txt")
+    parser.add_argument('--data-path', type=str, default="./data/data_softsphere.txt")
     parser.add_argument('--mujoco-model-path', type=str,
                         default='/home/mbed/.mujoco/mujoco200/model/soft_experiments.xml')
     args, _ = parser.parse_known_args()
