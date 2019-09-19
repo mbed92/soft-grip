@@ -11,9 +11,9 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 1000
+NUM_EPISODES = 5
 MAX_ITER_PER_EP = 200
-LOOSE_HAND_DIV = 50
+LOOSE_HAND_DIV = 20
 
 
 def log_into_file(args):
@@ -37,7 +37,8 @@ def log_into_file(args):
         samples = list()
         for i in range(MAX_ITER_PER_EP):
             env.step()
-            samples.append(np.asarray(env.get_sensor_sensordata()).reshape(-1))
+            readings = np.array(env.get_sensor_sensordata()).reshape(-1)
+            samples.append(readings)
             if i % LOOSE_HAND_DIV == 0 and i > 0:
                 env.loose_hand()
             else:
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('--sim-step', type=int, default=5)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset")
-    parser.add_argument('--data-name', type=str, default="train_dataset")
+    parser.add_argument('--data-name', type=str, default="test_dataset")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)
