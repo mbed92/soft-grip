@@ -7,12 +7,21 @@ class ManEnv(Env):
     # id of joints used to create an objects - they'll be randomized during experiments
     obj_ids = list(range(34, 251))
 
-    def __init__(self, sim_start, sim_step, env_path):
+    def __init__(self, sim_start, sim_step, env_paths):
         super().__init__(sim_start, sim_step)
 
         # setup environment and viewer
-        scene = mujoco_py.load_model_from_path(env_path)
+        assert len(env_paths) > 0
+        self.env_paths = env_paths
+        scene = mujoco_py.load_model_from_path(env_paths[0])
         self.env = mujoco_py.MjSim(scene)
+
+    def load_env(self, num):
+        if num < len(self.env_paths):
+            scene = mujoco_py.load_model_from_path(self.env_paths[num])
+            self.env = mujoco_py.MjSim(scene)
+        else:
+            print("Wrong number,")
 
     # main methods
     def step(self, num_steps=-1, actions=None, min_dist=0.1):
@@ -57,5 +66,5 @@ class ManEnv(Env):
         return {
             "sim_start": args.sim_start,
             "sim_step": args.sim_step,
-            "env_path": args.mujoco_model_path,
+            "env_paths": args.mujoco_model_paths,
         }
