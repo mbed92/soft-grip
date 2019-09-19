@@ -4,8 +4,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from create_dataset import NUM_EPISODES, MAX_ITER_PER_EP
+import pickle
 
-path = "./data/data_softcylinder.txt"
+path = "./data/dataset/test_dataset.pickle"
 
 
 # def playground():
@@ -28,17 +29,20 @@ path = "./data/data_softcylinder.txt"
 #     plt.show()
 
 def playground():
-    data = np.loadtxt(path)
+    with open(path, "rb") as fp:
+        data = pickle.load(fp)
 
-    for i in range(NUM_EPISODES):
+    for acc in data["data"]:
 
-        acc = data[i * MAX_ITER_PER_EP:i * MAX_ITER_PER_EP + MAX_ITER_PER_EP, :-1]
-        mag = list()
-        for s in range(4):
-            magn = acc[:, s * 3:s * 3 + 3]
-            mag.append(np.sqrt(np.square(magn[:, 0]) +
-                               np.square(magn[:, 1]) +
-                               np.square(magn[:, 2])))
+        x = acc[:, 0]
+        y = acc[:, 1]
+        z = acc[:, 2]
+
+        mag1 = acc[:, 0] ** 2 + acc[:, 1] ** 2 + acc[:, 2] ** 2
+        mag2 = acc[:, 3] ** 2 + acc[:, 4] ** 2 + acc[:, 5] ** 2
+        mag3 = acc[:, 6] ** 2 + acc[:, 7] ** 2 + acc[:, 8] ** 2
+        mag4 = acc[:, 9] ** 2 + acc[:, 10] ** 2 + acc[:, 11] ** 2
+        mag = [mag1, mag2, mag3, mag4]
 
         plt.subplot(4, 1, 1)
         plt.plot(mag[0], 'r')
@@ -49,8 +53,6 @@ def playground():
         plt.subplot(4, 1, 4)
         plt.plot(mag[3], 'y')
         plt.show()
-
-        print("Iteration end: ", data[i * MAX_ITER_PER_EP + 1, -1])
         input("Press key to continue...")
 
 

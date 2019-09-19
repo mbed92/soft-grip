@@ -48,7 +48,7 @@ class ManEnv(Env):
 
     def loose_hand(self):
         for i in range(4):
-            self.env.data.ctrl[i] = 0.0
+            self.env.data.ctrl[i] = 0.4
 
     def set_new_stiffness(self, range_min=1e-3, range_max=3.0):
         new_value = np.random.uniform(range_min, range_max)
