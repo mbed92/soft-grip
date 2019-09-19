@@ -5,6 +5,7 @@
 from argparse import ArgumentParser
 from environment import ManEnv
 import numpy as np
+from tqdm import tqdm
 
 NUM_EPISODES = 100
 MAX_ITER = 200
@@ -16,7 +17,7 @@ def log_into_file(args):
     env = ManEnv(**env_spec)
     file = open(args.data_path, 'w')
 
-    for _ in range(NUM_EPISODES):
+    for _ in tqdm(range(NUM_EPISODES)):
         env.reset()
         current_stiffness = env.set_new_stiffness()
 
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--sim-step', type=int, default=5)
     parser.add_argument('--sim-start', type=int, default=1)
-    parser.add_argument('--data-path', type=str, default="./data/data_softbox.txt")
+    parser.add_argument('--data-path', type=str, default="./data/data_softcylinder.txt")
     parser.add_argument('--mujoco-model-path', type=str,
                         default='/home/mbed/.mujoco/mujoco200/model/soft_experiments.xml')
     args, _ = parser.parse_known_args()
