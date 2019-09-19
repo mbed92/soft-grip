@@ -4,7 +4,7 @@
 import numpy as np
 from argparse import ArgumentParser
 import tensorflow as tf
-import os
+import pickle, os
 from tqdm import tqdm
 
 config = tf.ConfigProto()
@@ -29,34 +29,23 @@ class RNN(tf.keras.Model):
         ])
 
     def call(self, inputs, training=None, mask=None):
-        inputs = inputs[tf.newaxis]
         logits = self.LSTM(inputs, training=training)
         return self.estimator(logits, training=training)
 
 
 def do_regression(args):
-    assert type(args.data_paths) is list
+    # load train & data sets
+    with open(args.data_path_train, "rb") as fp:
+        train_dataset = pickle.load(fp)
+    with open(args.data_path_test, "rb") as fp:
+        test_dataset = pickle.load(fp)
 
-    # split data into test/train datasets from all the provided files
-    x, y, tx, ty = list(), list(), list(), list()
-    for file in args.data_paths:
-        data = np.loadtxt(file)
-        i, k = data.shape
-        idx = int(0.9 * i)
-        y.append(data[:idx, -1])
-        x.append(data[:idx, :-1])
-        ty.append(data[idx:, -1])
-        tx.append(data[idx:, :-1])
-
-    # create tensorflow datasets
-    x, y, tx, ty = np.asarray(x), np.asarray(y)[:, :, np.newaxis], np.asarray(tx), np.asarray(ty)[:, :, np.newaxis]
-    out_dim_x = x.shape[-1]
-    out_dim_y = y.shape[-1]
-    [x, y, tx, ty] = np.reshape(x, [-1, out_dim_x]), np.reshape(y, [-1, out_dim_y]), np.reshape(tx, [-1, out_dim_x]), \
-                     np.reshape(ty, [-1, out_dim_y])
-
-    train_ds = tf.data.Dataset.from_tensor_slices((x, y)).batch(args.batch_size)
-    test_ds = tf.data.Dataset.from_tensor_slices((tx, ty)).batch(args.batch_size)
+    train_ds = tf.data.Dataset.from_tensor_slices((train_dataset["data"], train_dataset["stiffness"]))\
+        .shuffle(50)\
+        .batch(args.batch_size)
+    test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"]))\
+        .shuffle(50).\
+        batch(args.batch_size)
 
     # create tensorflow writers
     os.makedirs(args.results, exist_ok=True)
@@ -97,7 +86,6 @@ def do_regression(args):
             gradients = tape.gradient(total, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
             train_loss(rms)
-
             with tf.contrib.summary.always_record_summaries():
                 tf.contrib.summary.scalar('train_loss', train_loss.result(), step=n)
                 train_writer.flush()
@@ -112,7 +100,6 @@ def do_regression(args):
             with tf.contrib.summary.always_record_summaries():
                 tf.contrib.summary.scalar('test_loss', test_loss.result(), step=k)
                 test_writer.flush()
-
             k += 1
 
         template = 'Epoch {}, Loss: {}, Test Loss: {}'
@@ -130,9 +117,10 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-paths', nargs='+', type=str, required=True)
-    parser.add_argument('--results', type=str, default="./data/log", required=True)
+    parser.add_argument('--data-path-train', type=str, default="./data/dataset/train_dataset.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_dataset.pickle")
+    parser.add_argument('--results', type=str, default="./data/log")
     parser.add_argument('--epochs', type=int, default=9999)
-    parser.add_argument('--batch-size', type=int, default=200)
+    parser.add_argument('--batch-size', type=int, default=2)
     args, _ = parser.parse_known_args()
     do_regression(args)
