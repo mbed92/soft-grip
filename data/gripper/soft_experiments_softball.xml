@@ -1,0 +1,16 @@
+<mujoco model="soft experiments">
+    <include file="soft_grip.xml"/>
+
+    <!--BALL-->
+    <worldbody>
+        <body pos="1.2 -0.04 0.8">
+            <freejoint/>
+            <composite type="ellipsoid" count="7 7 7" spacing="0.3">
+                <skin texcoord="true" material="matsponge" rgba=".7 .7 .7 1"/>
+                <geom type="capsule" size=".1 0.05" rgba=".8 .2 .1 1" mass="0.0005" contype="0"/>
+                <joint kind="main" stiffness="1e-5" damping="1e-5" />
+            </composite>
+        </body>
+    </worldbody>
+
+</mujoco>
