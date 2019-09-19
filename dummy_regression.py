@@ -1,5 +1,6 @@
 # Author: Michał Bednarek PUT Poznan
 # Comment: RNN + FC network implemented in Tensorflow for regression of stiffness of the gripped object.
+# Each batch element is a whole signal (from 12 sensors) registered for one trial of squeezing.
 
 import numpy as np
 from argparse import ArgumentParser
@@ -16,14 +17,17 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 class RNN(tf.keras.Model):
 
-    def __init__(self, input_dim):
+    def __init__(self, lstm_dim):
         super(RNN, self).__init__()
 
-        self.LSTM = tf.keras.layers.CuDNNLSTM(input_dim)
+        self.LSTM = tf.keras.layers.CuDNNLSTM(lstm_dim)
         self.estimator = tf.keras.Sequential([
             tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(64, tf.nn.relu, dtype=tf.float64,
-                                  kernel_initializer=tf.keras.initializers.glorot_normal()),
+            tf.keras.layers.Dense(256, tf.nn.relu, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal()),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(128, tf.nn.relu, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal()),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(64, tf.nn.relu, dtype=tf.float64,  kernel_initializer=tf.keras.initializers.glorot_normal()),
             tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Dense(1, None, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal())
         ])
@@ -40,12 +44,13 @@ def do_regression(args):
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
 
+    # load as tensorflow datasets for easy handling
     train_ds = tf.data.Dataset.from_tensor_slices((train_dataset["data"], train_dataset["stiffness"]))\
         .shuffle(50)\
         .batch(args.batch_size)
     test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"]))\
-        .shuffle(50).\
-        batch(args.batch_size)
+        .shuffle(50)\
+        .batch(args.batch_size)
 
     # create tensorflow writers
     os.makedirs(args.results, exist_ok=True)
@@ -54,15 +59,8 @@ def do_regression(args):
     train_writer.set_as_default()
 
     # setup model
-    model = RNN(200)
+    model = RNN(256)
     regularizer = tf.keras.regularizers.l2(1e-5)
-    optimizer = tf.keras.optimizers.Adam(4e-5)
-    train_loss = tf.keras.metrics.Mean(name='train_loss')
-    test_loss = tf.keras.metrics.Mean(name='test_loss')
-    ckpt = tf.train.Checkpoint(optimizer=optimizer,
-                               model=model,
-                               optimizer_step=tf.train.get_or_create_global_step())
-    ckpt_man = tf.train.CheckpointManager(ckpt, args.results, max_to_keep=3)
 
     # add eta decay
     eta = tf.contrib.eager.Variable(1e-5)
@@ -72,6 +70,14 @@ def do_regression(args):
         args.epochs,
         0.99)
     eta.assign(eta_value())
+
+    optimizer = tf.keras.optimizers.Adam(eta)
+    train_loss = tf.keras.metrics.Mean(name='train_loss')
+    test_loss = tf.keras.metrics.Mean(name='test_loss')
+    ckpt = tf.train.Checkpoint(optimizer=optimizer,
+                               model=model,
+                               optimizer_step=tf.train.get_or_create_global_step())
+    ckpt_man = tf.train.CheckpointManager(ckpt, args.results, max_to_keep=3)
 
     # start training
     n, k = 0, 0
@@ -121,6 +127,6 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_dataset.pickle")
     parser.add_argument('--results', type=str, default="./data/log")
     parser.add_argument('--epochs', type=int, default=9999)
-    parser.add_argument('--batch-size', type=int, default=2)
+    parser.add_argument('--batch-size', type=int, default=10)
     args, _ = parser.parse_known_args()
     do_regression(args)

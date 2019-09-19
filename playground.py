@@ -3,7 +3,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from create_dataset import NUM_EPISODES, MAX_ITER
+from create_dataset import NUM_EPISODES, MAX_ITER_PER_EP
 
 path = "./data/data_softcylinder.txt"
 
@@ -32,7 +32,7 @@ def playground():
 
     for i in range(NUM_EPISODES):
 
-        acc = data[i * MAX_ITER:i * MAX_ITER + MAX_ITER, :-1]
+        acc = data[i * MAX_ITER_PER_EP:i * MAX_ITER_PER_EP + MAX_ITER_PER_EP, :-1]
         mag = list()
         for s in range(4):
             magn = acc[:, s * 3:s * 3 + 3]
@@ -50,7 +50,7 @@ def playground():
         plt.plot(mag[3], 'y')
         plt.show()
 
-        print("Iteration end: ", data[i * MAX_ITER + 1, -1])
+        print("Iteration end: ", data[i * MAX_ITER_PER_EP + 1, -1])
         input("Press key to continue...")
 
 
