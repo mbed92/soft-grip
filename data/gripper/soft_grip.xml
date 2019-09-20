@@ -56,7 +56,7 @@
             <site name="sBase" pos="0.22 0 0"/>
             <geom class="base" size="0.5 0.4 0.1" pos="-0.1 0 0"/>
             <geom class="base" size="1.0 0.6 0.02"/>
-            <geom class="base" size="0.5 0.4 0.1" pos="0.1 0 0"/>
+            <geom class="base" size="0.5 0.4 0.3" pos="0.1 0 0"/>
 
             <!-- FINGERS LEFT -->
             <body pos="0.2 0.7 0.5" quat="3 0 0 0.3">

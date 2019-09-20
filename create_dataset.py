@@ -11,9 +11,8 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 100
+NUM_EPISODES = 10
 MAX_ITER_PER_EP = 100
-# LOOSE_HAND_DIV = 100
 
 
 def log_into_file(args):
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset")
-    parser.add_argument('--data-name', type=str, default="train_dataset")
+    parser.add_argument('--data-name', type=str, default="test_dataset")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)

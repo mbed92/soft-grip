@@ -1,4 +1,4 @@
-<mujoco model="soft experiments">
+<mujoco model="soft experiments_softcylinder">
     <include file="soft_grip.xml"/>
 
     <!--CYLINDER-->
@@ -7,9 +7,9 @@
             <freejoint/>
             <composite type="cylinder" count="7 7 7" spacing="0.32">
                 <!--                <skin texcoord="true" material="matsponge" rgba=".7 .7 .7 1"/>-->
-                <geom type="capsule" size=".2 0.05" rgba=".8 .2 .1 1" mass="0.003" contype="0"/>
-                <joint kind="main" stiffness="1.5" damping="0.1"/>
-                <tendon kind="main" stiffness="1.0" damping="0.1"/>
+                <geom type="capsule" size=".15 0.2" rgba=".8 .2 .1 1" mass="0.003" contype="0"/>
+                <joint kind="main" stiffness="10"/>
+                <tendon kind="main" stiffness="10"/>
             </composite>
         </body>
     </worldbody>

@@ -63,7 +63,7 @@ class ManEnv(Env):
         for i in range(4):
             self.env.data.ctrl[i] = 1.0
 
-    def set_new_stiffness(self, range_min=1e-3, range_max=3.0):
+    def set_new_stiffness(self, range_min=1e-3, range_max=100.0):
         new_value = np.random.uniform(range_min, range_max)
         for i in self.joint_ids:
             self.env.model.jnt_stiffness[i] = new_value

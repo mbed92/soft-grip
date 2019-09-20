@@ -1,17 +1,16 @@
-<mujoco model="soft experiments">
+<mujoco model="soft experiments_softball">
     <include file="soft_grip.xml"/>
 
     <!--BALL-->
     <worldbody>
-        <body pos="1.2 -0.04 0.8">
+        <body pos="1.5 -0.04 0.8">
             <freejoint/>
             <composite type="ellipsoid" count="7 7 7" spacing="0.31">
                 <!--                <skin texcoord="true" material="matsponge" rgba=".7 .7 .7 1"/>-->
-                <geom type="capsule" size=".2 0.05" rgba=".8 .2 .1 1" mass="0.003" contype="0"/>
-                <joint kind="main" stiffness="1.5" damping="0.1"/>
-                <tendon kind="main" stiffness="1.0" damping="0.1"/>
+                <geom type="capsule" size=".15 0.2" rgba=".8 .2 .1 1" mass="0.003" contype="0"/>
+                <joint kind="main" stiffness="100 "/>
+                <tendon kind="main" stiffness="100"/>
             </composite>
         </body>
     </worldbody>
-
 </mujoco>

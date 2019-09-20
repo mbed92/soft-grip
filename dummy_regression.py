@@ -22,18 +22,18 @@ class RNN(tf.keras.Model):
 
         self.CNN = tf.keras.Sequential([
             tf.keras.layers.Conv1D(64, 5, 2, activation=tf.nn.relu),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Conv1D(128, 5, 2, activation=tf.nn.relu),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Conv1D(256, 5, 2, activation=tf.nn.relu)
+            tf.keras.layers.Dropout(0.5),
+            # tf.keras.layers.Conv1D(128, 5, 2, activation=tf.nn.relu),
+            # tf.keras.layers.Dropout(0.3),
+            # tf.keras.layers.Conv1D(256, 5, 2, activation=tf.nn.relu)
         ])
         self.LSTM = tf.keras.layers.CuDNNLSTM(256)
         self.estimator = tf.keras.Sequential([
             tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(1024, tf.nn.relu),
+            tf.keras.layers.Dense(256, tf.nn.relu),
+            tf.keras.layers.Dropout(0.5),
+            tf.keras.layers.Dense(128, tf.nn.relu),
             tf.keras.layers.Dropout(0.3),
-            # tf.keras.layers.Dense(128, tf.nn.relu),
-            # tf.keras.layers.Dropout(0.3),
             # tf.keras.layers.Dense(64, tf.nn.relu),
             # tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Dense(1, None)
@@ -42,7 +42,7 @@ class RNN(tf.keras.Model):
     def call(self, inputs, training=None, mask=None):
         cnn = self.CNN(inputs, training=training)
         lstm = self.LSTM(cnn, training=training)
-        return self.estimator(lstm, training=training)
+        return tf.squeeze(self.estimator(lstm, training=training), 1)
 
 
 def do_regression(args):
@@ -96,16 +96,17 @@ def do_regression(args):
         train_writer.set_as_default()
         for x_train, y_train in train_ds:
             with tf.GradientTape() as tape:
-                predictions = model((x_train - train_mean) / np.sqrt(train_var), training=True)
+                predictions = model(x_train, training=True)
                 rms = tf.keras.losses.mean_squared_error(y_train, predictions)
-                reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
-                total = rms + reg
+                # reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
+                # total = rms + reg
+                total = rms
 
             gradients = tape.gradient(total, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
             train_loss(rms)
             with tf.contrib.summary.always_record_summaries():
-                tf.contrib.summary.scalar('train_loss', train_loss.result(), step=n)
+                tf.contrib.summary.scalar('train_loss', rms, step=n)
                 train_writer.flush()
             n += 1
 
@@ -116,7 +117,7 @@ def do_regression(args):
             rms = tf.keras.losses.mean_squared_error(y_test, predictions)
             test_loss(rms)
             with tf.contrib.summary.always_record_summaries():
-                tf.contrib.summary.scalar('test_loss', test_loss.result(), step=k)
+                tf.contrib.summary.scalar('test_loss', rms, step=k)
                 test_writer.flush()
             k += 1
 
@@ -135,8 +136,8 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str, default="./data/dataset/train_300.pickle")
-    parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_30.pickle")
+    parser.add_argument('--data-path-train', type=str, default="./data/dataset/train_dataset.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_dataset.pickle")
     parser.add_argument('--results', type=str, default="./data/logs")
     parser.add_argument('--epochs', type=int, default=9999)
     parser.add_argument('--batch-size', type=int, default=5)
