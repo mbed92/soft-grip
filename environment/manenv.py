@@ -5,7 +5,8 @@ import numpy as np
 
 class ManEnv(Env):
     # id of joints used to create an objects - they'll be randomized during experiments
-    obj_ids = list(range(34, 251))
+    joint_ids = list(range(34, 251))
+    tendon_ids = list(range(1))
 
     def __init__(self, sim_start, sim_step, env_paths, is_vis=True):
         super().__init__(sim_start, sim_step)
@@ -63,9 +64,13 @@ class ManEnv(Env):
             self.env.data.ctrl[i] = 1.0
 
     def set_new_stiffness(self, range_min=1e-3, range_max=3.0):
+
+
         new_value = np.random.uniform(range_min, range_max)
-        for i in self.obj_ids:
+        for i in self.joint_ids:
             self.env.model.jnt_stiffness[i] = new_value
+        for i in self.tendon_ids:
+            self.env.model.tendon_stiffness[i] = new_value
         return new_value
 
     def get_env(self):

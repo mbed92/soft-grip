@@ -11,7 +11,7 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 2
+NUM_EPISODES = 100
 MAX_ITER_PER_EP = 100
 # LOOSE_HAND_DIV = 100
 
@@ -30,6 +30,7 @@ def log_into_file(args):
 
     for ep in tqdm(range(NUM_EPISODES * num_envs)):
         current_stiffness = env.reset()
+        print(current_stiffness)
 
         # start squeezing an object
         env.close_hand()
@@ -45,7 +46,7 @@ def log_into_file(args):
         stiffness.append(current_stiffness)
 
         # change env number
-        if (ep + 1) % NUM_EPISODES == 0 and ep > 0:
+        if (ep + 1) % NUM_EPISODES == 0:
             current_env += 1
             if current_env > num_envs:
                 current_env = 0
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--sim-step', type=int, default=10)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset")
-    parser.add_argument('--data-name', type=str, default="test_dataset")
+    parser.add_argument('--data-name', type=str, default="train_dataset")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)

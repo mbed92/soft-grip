@@ -6,9 +6,10 @@
         <body pos="1.4 -0.02 0.8">
             <freejoint/>
             <composite type="box" count="7 7 7" spacing="0.27">
-<!--                <skin texcoord="true" material="matsponge" rgba=".7 .7 .7 1"/>-->
+                <!--                <skin texcoord="true" material="matsponge" rgba=".7 .7 .7 1"/>-->
                 <geom type="capsule" size=".2 0.05" rgba=".8 .2 .1 1" mass="0.003" contype="0"/>
-                <joint kind="main" stiffness="3.0" damping="10" />
+                <joint kind="main" stiffness="1.5" damping="0.1"/>
+                <tendon kind="main" stiffness="666" damping="0.1"/>
             </composite>
         </body>
     </worldbody>

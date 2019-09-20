@@ -342,10 +342,10 @@
 
     <!-- ACTUATORS -->
     <actuator>
-        <cylinder tendon="grip_l_11" area="200"/>
-        <cylinder tendon="grip_l_12" area="200"/>
-        <cylinder tendon="grip_l_13" area="200"/>
-        <cylinder tendon="grip_r_1"  area="200"/>
+        <cylinder tendon="grip_l_11" area="300"/>
+        <cylinder tendon="grip_l_12" area="300"/>
+        <cylinder tendon="grip_l_13" area="300"/>
+        <cylinder tendon="grip_r_1"  area="300"/>
     </actuator>
 
     <!-- SENSORS -->
