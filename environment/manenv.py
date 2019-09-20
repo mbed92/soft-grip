@@ -64,8 +64,6 @@ class ManEnv(Env):
             self.env.data.ctrl[i] = 1.0
 
     def set_new_stiffness(self, range_min=1e-3, range_max=3.0):
-
-
         new_value = np.random.uniform(range_min, range_max)
         for i in self.joint_ids:
             self.env.model.jnt_stiffness[i] = new_value
@@ -76,6 +74,10 @@ class ManEnv(Env):
     def get_env(self):
         return self.env
 
+    def render(self):
+        if self.is_vis:
+            self.viewer.render()
+
     # specs
     @staticmethod
     def get_std_spec(args):
@@ -83,4 +85,5 @@ class ManEnv(Env):
             "sim_start": args.sim_start,
             "sim_step": args.sim_step,
             "env_paths": args.mujoco_model_paths,
+            "is_vis": args.vis
         }

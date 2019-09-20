@@ -30,13 +30,13 @@ def log_into_file(args):
 
     for ep in tqdm(range(NUM_EPISODES * num_envs)):
         current_stiffness = env.reset()
-        print(current_stiffness)
+        # print(current_stiffness)
 
         # start squeezing an object
         env.close_hand()
         samples = list()
         for i in range(MAX_ITER_PER_EP):
-            env.viewer.render()
+            env.render()
             readings = env.step()
             samples.append(readings)
 
@@ -64,6 +64,7 @@ def log_into_file(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--sim-step', type=int, default=10)
+    parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset")
     parser.add_argument('--data-name', type=str, default="train_dataset")
