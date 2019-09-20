@@ -17,30 +17,40 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 class RNN(tf.keras.Model):
 
-    def __init__(self, lstm_dim):
+    def __init__(self):
         super(RNN, self).__init__()
 
-        self.LSTM = tf.keras.layers.CuDNNLSTM(lstm_dim)
+        self.CNN = tf.keras.Sequential([
+            tf.keras.layers.Conv1D(64, 5, 2, activation=tf.nn.relu),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Conv1D(128, 5, 2, activation=tf.nn.relu),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Conv1D(256, 5, 2, activation=tf.nn.relu)
+        ])
+        self.LSTM = tf.keras.layers.CuDNNLSTM(256)
         self.estimator = tf.keras.Sequential([
             tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(256, tf.nn.relu, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal()),
+            tf.keras.layers.Dense(1024, tf.nn.relu),
             tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(128, tf.nn.relu, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal()),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(64, tf.nn.relu, dtype=tf.float64,  kernel_initializer=tf.keras.initializers.glorot_normal()),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(1, None, dtype=tf.float64, kernel_initializer=tf.keras.initializers.glorot_normal())
+            # tf.keras.layers.Dense(128, tf.nn.relu),
+            # tf.keras.layers.Dropout(0.3),
+            # tf.keras.layers.Dense(64, tf.nn.relu),
+            # tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(1, None)
         ])
 
     def call(self, inputs, training=None, mask=None):
-        logits = self.LSTM(inputs, training=training)
-        return self.estimator(logits, training=training)
+        cnn = self.CNN(inputs, training=training)
+        lstm = self.LSTM(cnn, training=training)
+        return self.estimator(lstm, training=training)
 
 
 def do_regression(args):
     # load train & data sets
     with open(args.data_path_train, "rb") as fp:
         train_dataset = pickle.load(fp)
+        train_mean = np.mean(train_dataset["data"], axis=(0, 1), keepdims=True)
+        train_var = np.var(train_dataset["data"], axis=(0, 1), keepdims=True)
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
 
@@ -48,6 +58,7 @@ def do_regression(args):
     train_ds = tf.data.Dataset.from_tensor_slices((train_dataset["data"], train_dataset["stiffness"]))\
         .shuffle(50)\
         .batch(args.batch_size)
+
     test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"]))\
         .shuffle(50)\
         .batch(args.batch_size)
@@ -59,13 +70,13 @@ def do_regression(args):
     train_writer.set_as_default()
 
     # setup model
-    model = RNN(256)
+    model = RNN()
     regularizer = tf.keras.regularizers.l2(1e-5)
 
     # add eta decay
-    eta = tf.contrib.eager.Variable(1e-5)
+    eta = tf.contrib.eager.Variable(3e-4)
     eta_value = tf.train.exponential_decay(
-        1e-5,
+        3e-4,
         tf.train.get_or_create_global_step(),
         args.epochs,
         0.99)
@@ -85,10 +96,11 @@ def do_regression(args):
         train_writer.set_as_default()
         for x_train, y_train in train_ds:
             with tf.GradientTape() as tape:
-                predictions = model(x_train)
+                predictions = model((x_train - train_mean) / np.sqrt(train_var), training=True)
                 rms = tf.keras.losses.mean_squared_error(y_train, predictions)
                 reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
                 total = rms + reg
+
             gradients = tape.gradient(total, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
             train_loss(rms)
@@ -100,7 +112,7 @@ def do_regression(args):
         # validate after each epoch
         test_writer.set_as_default()
         for x_test, y_test in test_ds:
-            predictions = model(x_test)
+            predictions = model((x_test - train_mean) / np.sqrt(train_var), training=False)
             rms = tf.keras.losses.mean_squared_error(y_test, predictions)
             test_loss(rms)
             with tf.contrib.summary.always_record_summaries():
@@ -123,10 +135,10 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str, default="./data/dataset/train_dataset.pickle")
-    parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_dataset.pickle")
-    parser.add_argument('--results', type=str, default="./data/log")
+    parser.add_argument('--data-path-train', type=str, default="./data/dataset/train_300.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_30.pickle")
+    parser.add_argument('--results', type=str, default="./data/logs")
     parser.add_argument('--epochs', type=int, default=9999)
-    parser.add_argument('--batch-size', type=int, default=10)
+    parser.add_argument('--batch-size', type=int, default=5)
     args, _ = parser.parse_known_args()
     do_regression(args)

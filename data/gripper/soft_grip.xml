@@ -342,17 +342,17 @@
 
     <!-- ACTUATORS -->
     <actuator>
-        <cylinder tendon="grip_l_11" area="300"/>
-        <cylinder tendon="grip_l_12" area="300"/>
-        <cylinder tendon="grip_l_13" area="300"/>
-        <cylinder tendon="grip_r_1"  area="300"/>
+        <cylinder tendon="grip_l_11" area="200"/>
+        <cylinder tendon="grip_l_12" area="200"/>
+        <cylinder tendon="grip_l_13" area="200"/>
+        <cylinder tendon="grip_r_1"  area="200"/>
     </actuator>
 
     <!-- SENSORS -->
     <sensor>
-        <accelerometer name="l11_sensor" noise="0.05" site="s115"/>
-        <accelerometer name="l12_sensor" noise="0.05" site="s125"/>
-        <accelerometer name="l13_sensor" noise="0.05" site="s135"/>
-        <accelerometer name="l2_sensor" noise="0.05" site="s25"/>
+        <accelerometer name="l11_sensor" site="s116"/>
+        <accelerometer name="l12_sensor" site="s126"/>
+        <accelerometer name="l13_sensor" site="s136"/>
+        <accelerometer name="l2_sensor" site="s26"/>
     </sensor>
 </mujoco>

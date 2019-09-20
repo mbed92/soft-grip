@@ -7,19 +7,25 @@ class ManEnv(Env):
     # id of joints used to create an objects - they'll be randomized during experiments
     obj_ids = list(range(34, 251))
 
-    def __init__(self, sim_start, sim_step, env_paths):
+    def __init__(self, sim_start, sim_step, env_paths, is_vis=True):
         super().__init__(sim_start, sim_step)
 
         # setup environment and viewer
         assert len(env_paths) > 0
+        self.is_vis = is_vis
         self.env_paths = env_paths
         scene = mujoco_py.load_model_from_path(env_paths[0])
         self.env = mujoco_py.MjSim(scene)
+        if self.is_vis:
+            self.viewer = mujoco_py.MjViewer(self.env)
 
     def load_env(self, num):
         if num < len(self.env_paths):
-            scene = mujoco_py.load_model_from_path(self.env_paths[num])
+            new_scene = self.env_paths[num]
+            scene = mujoco_py.load_model_from_path(new_scene)
             self.env = mujoco_py.MjSim(scene)
+            if self.is_vis:
+                self.viewer = mujoco_py.MjViewer(self.env)
         else:
             print("Wrong number,")
 
@@ -33,11 +39,17 @@ class ManEnv(Env):
         except mujoco_py.builder.MujocoException:
             self.reset()
 
+        return np.array(self.get_sensor_sensordata()).reshape(-1)
+
     def reset(self):
+        current_stiffness = self.set_new_stiffness()
         self.env.reset()
+        self.env.forward()
 
         if self.sim_start > 0:
             self.step(self.sim_start)
+
+        return current_stiffness
 
     def get_sensor_sensordata(self):
         return self.env.data.sensordata
@@ -48,13 +60,12 @@ class ManEnv(Env):
 
     def loose_hand(self):
         for i in range(4):
-            self.env.data.ctrl[i] = 0.4
+            self.env.data.ctrl[i] = 1.0
 
     def set_new_stiffness(self, range_min=1e-3, range_max=3.0):
         new_value = np.random.uniform(range_min, range_max)
         for i in self.obj_ids:
             self.env.model.jnt_stiffness[i] = new_value
-        self.env.forward()
         return new_value
 
     def get_env(self):
