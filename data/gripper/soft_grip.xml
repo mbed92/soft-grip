@@ -22,7 +22,7 @@
 
         <!-- Looking from the behind -->
         <default class="finger_left_util">
-            <joint type="hinge" range="-0.2 0"/>
+            <joint type="hinge" range="-0.2 0.05"/>
             <site pos="0 -0.15 0"/>
             <geom type="box" pos="0 0.075 0" size="0.03 0.03 0.2" mass="0.05" contype="1" conaffinity="1"/>
         </default>
@@ -34,7 +34,7 @@
         </default>
 
         <default class="finger_adduction">
-            <joint type="hinge" axis="0 1 0" stiffness="0.9" damping="9" limited="true" range="-0.01 0.01"/>
+            <joint type="hinge" axis="0 1 0" stiffness="9" damping="9" limited="true" range="-0.01 0.01"/>
         </default>
 
         <default class="tinger_twist">

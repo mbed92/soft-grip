@@ -14,35 +14,6 @@ tf.enable_eager_execution(config)
 tf.keras.backend.set_session(tf.Session(config=config))
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-class RNN(tf.keras.Model):
-
-    def __init__(self):
-        super(RNN, self).__init__()
-
-        self.CNN = tf.keras.Sequential([
-            tf.keras.layers.Conv1D(64, 5, 2, activation=tf.nn.relu),
-            tf.keras.layers.Dropout(0.5),
-            # tf.keras.layers.Conv1D(128, 5, 2, activation=tf.nn.relu),
-            # tf.keras.layers.Dropout(0.3),
-            # tf.keras.layers.Conv1D(256, 5, 2, activation=tf.nn.relu)
-        ])
-        self.LSTM = tf.keras.layers.CuDNNLSTM(256)
-        self.estimator = tf.keras.Sequential([
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(256, tf.nn.relu),
-            tf.keras.layers.Dropout(0.5),
-            tf.keras.layers.Dense(128, tf.nn.relu),
-            tf.keras.layers.Dropout(0.3),
-            # tf.keras.layers.Dense(64, tf.nn.relu),
-            # tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(1, None)
-        ])
-
-    def call(self, inputs, training=None, mask=None):
-        inputs = tf.cast(inputs, tf.float32)
-        cnn = self.CNN(inputs, training=training)
-        lstm = self.BIDIRECTIONAL(cnn, training=training)
-        return tf.squeeze(self.FC(lstm, training=training), 1)
 
 def do_regression(args):
     with open(args.data_path_train, "rb") as fp:
@@ -68,7 +39,7 @@ def do_regression(args):
     train_writer.set_as_default()
 
     # setup model
-    model = RNN()
+    model = RNN(args.batch_size)
     regularizer = tf.keras.regularizers.l2(1e-5)
 
     # add eta decay
@@ -103,23 +74,28 @@ def do_regression(args):
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
             train_loss(rms)
             with tf.contrib.summary.always_record_summaries():
-                tf.contrib.summary.scalar('train_loss', rms, step=n)
+                tf.contrib.summary.scalar('train/loss', tf.reduce_mean(rms), step=n)
+                tf.contrib.summary.scalar('train/absolute', tf.sqrt(tf.reduce_mean(rms)), step=n)
                 train_writer.flush()
             n += 1
 
         # validate after each epoch
         test_writer.set_as_default()
+        test_rms = list()
         for x_test, y_test in test_ds:
             predictions = model((x_test - train_mean) / train_std, training=False)
             rms = tf.losses.mean_squared_error(y_test, predictions, reduction=tf.losses.Reduction.NONE)
             test_loss(rms)
+            test_rms.append(rms)
             with tf.contrib.summary.always_record_summaries():
-                tf.contrib.summary.scalar('test_loss', rms, step=k)
+                tf.contrib.summary.scalar('test/loss', tf.reduce_mean(rms), step=k)
+                tf.contrib.summary.scalar('test/absolute', tf.sqrt(tf.reduce_mean(rms)), step=n)
                 test_writer.flush()
             k += 1
 
-        template = 'Epoch {}, Loss: {}, Test Loss: {}'
-        print(template.format(epoch + 1, train_loss.result(), test_loss.result()))
+        template = 'Epoch {}\tTest ABSRMS: {}'
+        test_rms = tf.sqrt(tf.reduce_mean(tf.concat(test_rms, 0)))
+        print(template.format(epoch + 1, test_rms))
         eta.assign(eta_value())
 
         # Reset the metrics for the next epoch

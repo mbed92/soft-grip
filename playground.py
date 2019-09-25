@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from create_dataset import NUM_EPISODES, MAX_ITER_PER_EP
 import pickle
 
-path = "./data/dataset/test_dataset.pickle"
+path = "./data/dataset/train_dataset.pickle"
 
 
 # def playground():
@@ -34,24 +34,29 @@ def playground():
 
     for acc in data["data"]:
 
-        x = acc[:, 0]
-        y = acc[:, 1]
-        z = acc[:, 2]
-
         mag1 = acc[:, 0] ** 2 + acc[:, 1] ** 2 + acc[:, 2] ** 2
         mag2 = acc[:, 3] ** 2 + acc[:, 4] ** 2 + acc[:, 5] ** 2
         mag3 = acc[:, 6] ** 2 + acc[:, 7] ** 2 + acc[:, 8] ** 2
         mag4 = acc[:, 9] ** 2 + acc[:, 10] ** 2 + acc[:, 11] ** 2
         mag = [mag1, mag2, mag3, mag4]
 
-        plt.subplot(4, 1, 1)
+        # acc
+        plt.subplot(7, 1, 1)
         plt.plot(mag[0], 'r')
-        plt.subplot(4, 1, 2)
+        plt.subplot(7, 1, 2)
         plt.plot(mag[1], 'g')
-        plt.subplot(4, 1, 3)
+        plt.subplot(7, 1, 3)
         plt.plot(mag[2], 'b')
-        plt.subplot(4, 1, 4)
+        plt.subplot(7, 1, 4)
         plt.plot(mag[3], 'y')
+
+        # gyro
+        plt.subplot(7, 1, 5)
+        plt.plot(acc[:, 12], 'r')
+        plt.subplot(7, 1, 6)
+        plt.plot(acc[:, 13], 'g')
+        plt.subplot(7, 1, 7)
+        plt.plot(acc[:, 14], 'b')
         plt.show()
         input("Press key to continue...")
 
