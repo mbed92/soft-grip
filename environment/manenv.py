@@ -19,6 +19,7 @@ class ManEnv(Env):
         self.env = mujoco_py.MjSim(scene)
         if self.is_vis:
             self.viewer = mujoco_py.MjViewer(self.env)
+        self.is_closing = True
 
     def load_env(self, num):
         if num < len(self.env_paths):
@@ -55,11 +56,19 @@ class ManEnv(Env):
     def get_sensor_sensordata(self):
         return self.env.data.sensordata
 
-    def close_hand(self):
+    def toggle_grip(self):
+        if self.is_closing:
+            self.is_closing = False
+            self._loose_hand()
+        else:
+            self._close_hand()
+            self.is_closing = True
+
+    def _close_hand(self):
         for i in range(4):
             self.env.data.ctrl[i] = -1.0
 
-    def loose_hand(self):
+    def _loose_hand(self):
         for i in range(4):
             self.env.data.ctrl[i] = 1.0
 

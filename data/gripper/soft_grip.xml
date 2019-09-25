@@ -350,9 +350,14 @@
 
     <!-- SENSORS -->
     <sensor>
-        <accelerometer name="l11_sensor" site="s116"/>
-        <accelerometer name="l12_sensor" site="s126"/>
-        <accelerometer name="l13_sensor" site="s136"/>
-        <accelerometer name="l2_sensor" site="s26"/>
+        <accelerometer name="a11_sensor" site="s116"/>
+        <accelerometer name="a12_sensor" site="s126"/>
+        <accelerometer name="a13_sensor" site="s136"/>
+        <accelerometer name="a21_sensor" site="s26"/>
+
+        <gyro name="g11_sensor" site="s116"/>
+        <gyro name="g12_sensor" site="s126"/>
+        <gyro name="g13_sensor" site="s136"/>
+        <gyro name="g21_sensor" site="s26"/>
     </sensor>
 </mujoco>

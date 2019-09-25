@@ -1,6 +1,5 @@
 # Author: Michał Bednarek PUT Poznan
 # Comment: RNN + FC network implemented in Tensorflow for regression of stiffness of the gripped object.
-# Each batch element is a whole signal (from 12 sensors) registered for one trial of squeezing.
 
 import numpy as np
 from argparse import ArgumentParser
@@ -40,27 +39,27 @@ class RNN(tf.keras.Model):
         ])
 
     def call(self, inputs, training=None, mask=None):
+        inputs = tf.cast(inputs, tf.float32)
         cnn = self.CNN(inputs, training=training)
-        lstm = self.LSTM(cnn, training=training)
+        lstm = self.BIDIRECTIONAL(cnn, training=training)
         return tf.squeeze(self.estimator(lstm, training=training), 1)
 
 
 def do_regression(args):
-    # load train & data sets
     with open(args.data_path_train, "rb") as fp:
         train_dataset = pickle.load(fp)
         train_mean = np.mean(train_dataset["data"], axis=(0, 1), keepdims=True)
-        train_var = np.var(train_dataset["data"], axis=(0, 1), keepdims=True)
+        train_std = np.std(train_dataset["data"], axis=(0, 1), keepdims=True)
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
 
     # load as tensorflow datasets for easy handling
-    train_ds = tf.data.Dataset.from_tensor_slices((train_dataset["data"], train_dataset["stiffness"]))\
-        .shuffle(50)\
+    train_ds = tf.data.Dataset.from_tensor_slices((train_dataset["data"], train_dataset["stiffness"])) \
+        .shuffle(50) \
         .batch(args.batch_size)
 
-    test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"]))\
-        .shuffle(50)\
+    test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"])) \
+        .shuffle(50) \
         .batch(args.batch_size)
 
     # create tensorflow writers
@@ -74,9 +73,9 @@ def do_regression(args):
     regularizer = tf.keras.regularizers.l2(1e-5)
 
     # add eta decay
-    eta = tf.contrib.eager.Variable(3e-4)
+    eta = tf.contrib.eager.Variable(1e-3)
     eta_value = tf.train.exponential_decay(
-        3e-4,
+        1e-3,
         tf.train.get_or_create_global_step(),
         args.epochs,
         0.99)
@@ -96,11 +95,10 @@ def do_regression(args):
         train_writer.set_as_default()
         for x_train, y_train in train_ds:
             with tf.GradientTape() as tape:
-                predictions = model(x_train, training=True)
-                rms = tf.keras.losses.mean_squared_error(y_train, predictions)
-                # reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
-                # total = rms + reg
-                total = rms
+                predictions = model((x_train - train_mean) / train_std, training=True)
+                rms = tf.losses.mean_squared_error(y_train, predictions, reduction=tf.losses.Reduction.NONE)
+                reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
+                total = tf.reduce_mean(rms) + reg
 
             gradients = tape.gradient(total, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -113,8 +111,8 @@ def do_regression(args):
         # validate after each epoch
         test_writer.set_as_default()
         for x_test, y_test in test_ds:
-            predictions = model((x_test - train_mean) / np.sqrt(train_var), training=False)
-            rms = tf.keras.losses.mean_squared_error(y_test, predictions)
+            predictions = model((x_test - train_mean) / train_std, training=False)
+            rms = tf.losses.mean_squared_error(y_test, predictions, reduction=tf.losses.Reduction.NONE)
             test_loss(rms)
             with tf.contrib.summary.always_record_summaries():
                 tf.contrib.summary.scalar('test_loss', rms, step=k)
@@ -130,7 +128,7 @@ def do_regression(args):
         test_loss.reset_states()
 
         # save each 100 epochs
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             ckpt_man.save()
 
 
@@ -140,6 +138,6 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_dataset.pickle")
     parser.add_argument('--results', type=str, default="./data/logs")
     parser.add_argument('--epochs', type=int, default=9999)
-    parser.add_argument('--batch-size', type=int, default=5)
+    parser.add_argument('--batch-size', type=int, default=15)
     args, _ = parser.parse_known_args()
     do_regression(args)

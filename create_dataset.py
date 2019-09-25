@@ -1,8 +1,6 @@
 # Author: Michał Bednarek PUT Poznan
 # Comment: Script gor generating data from Mujoco simulation for deep learning
-# models. Data saved as a pickle. Each sample is a MAX_ITER_PER_EP samples of squeezing:
-# in each sample first 12 numbers are XYZ readings from accelerators attached to
-# fingers, last one is a stiffness of an object.
+# models. Data saved as a pickle. Each sample is a MAX_ITER_PER_EP samples of squeezing.
 
 from argparse import ArgumentParser
 from environment import ManEnv
@@ -32,10 +30,15 @@ def log_into_file(args):
         # print(current_stiffness)
 
         # start squeezing an object
-        env.close_hand()
         samples = list()
         for i in range(MAX_ITER_PER_EP):
             env.render()
+
+            # perform squeezing or loose a hand
+            if i % OPEN_CLOSE_DIV == 0:
+                env.toggle_grip()
+
+            # gather readings
             readings = env.step()
             samples.append(readings)
 
