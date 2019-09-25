@@ -6,13 +6,13 @@ from argparse import ArgumentParser
 import tensorflow as tf
 import pickle, os
 from tqdm import tqdm
+from net import RNN
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 tf.enable_eager_execution(config)
 tf.keras.backend.set_session(tf.Session(config=config))
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 
 class RNN(tf.keras.Model):
 
@@ -43,7 +43,6 @@ class RNN(tf.keras.Model):
         cnn = self.CNN(inputs, training=training)
         lstm = self.BIDIRECTIONAL(cnn, training=training)
         return tf.squeeze(self.FC(lstm, training=training), 1)
-
 
 def do_regression(args):
     with open(args.data_path_train, "rb") as fp:
