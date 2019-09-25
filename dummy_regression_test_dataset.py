@@ -48,7 +48,7 @@ def do_regression(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data-path-train', type=str, default="./data/dataset/full_ds/train_dataset.pickle")
-    parser.add_argument('--data-path-test', type=str, default="./data/dataset/full_ds/test_dataset.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/full_ds/unseen.pickle")
     parser.add_argument('--results-dir', type=str, default="./data/logs/CNN_RNN_FC")
     parser.add_argument('--epochs', type=int, default=9999)
     parser.add_argument('--batch-size', type=int, default=128)

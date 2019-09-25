@@ -15,36 +15,31 @@ class RNN(tf.keras.Model):
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Activation("relu"),
             tf.keras.layers.Dropout(0.3),
-            # tf.keras.layers.Conv1D(128, 5, 2),
-            # # # tf.keras.layers.BatchNormalization(),
-            # tf.keras.layers.Activation("relu"),
-            # tf.keras.layers.Dropout(0.3)
+            tf.keras.layers.Conv1D(256, 3, 2),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Activation("relu"),
+            tf.keras.layers.Dropout(0.3)
         ])
 
-        forward_layer = tf.keras.layers.LSTM(128, return_sequences=False, dtype=tf.float64)
-        backward_layer = tf.keras.layers.LSTM(128, activation='relu', return_sequences=False, go_backwards=True)
+        forward_layer = tf.keras.layers.LSTM(256, return_sequences=False, dtype=tf.float64)
+        backward_layer = tf.keras.layers.LSTM(256, activation='relu', return_sequences=False, go_backwards=True)
         self.BIDIRECTIONAL = tf.keras.Sequential([
-            tf.keras.layers.Bidirectional(forward_layer, backward_layer=backward_layer, input_shape=(batch_size, 128))
+            tf.keras.layers.Bidirectional(forward_layer, backward_layer=backward_layer, input_shape=(batch_size, 256))
         ])
 
         self.FC = tf.keras.Sequential([
-            # tf.keras.layers.Flatten(),
-            # tf.keras.layers.Dense(1024),
-            # # tf.keras.layers.BatchNormalization(),
-            # tf.keras.layers.Activation("relu"),
-            # tf.keras.layers.Dropout(0.3),
-            # tf.keras.layers.Dense(512),
-            # # tf.keras.layers.BatchNormalization(),
-            # tf.keras.layers.Activation("relu"),
-            # tf.keras.layers.Dropout(0.3),
-            # tf.keras.layers.Dense(256),
-            # # tf.keras.layers.BatchNormalization(),
-            # tf.keras.layers.Activation("relu"),
-            # tf.keras.layers.Dropout(0.3),
-            # tf.keras.layers.Dense(128),
-            # # tf.keras.layers.BatchNormalization(),
-            # tf.keras.layers.Activation("relu"),
-            # tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(512),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Activation("relu"),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(256),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Activation("relu"),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(128),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Activation("relu"),
+            tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Dense(64),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Activation("relu"),
