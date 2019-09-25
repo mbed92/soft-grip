@@ -23,6 +23,11 @@ def do_regression(args):
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
 
+    unseen = None
+    if args.data_path_unseen is not None:
+        with open(args.data_path_unseen, "rb") as fp:
+            unseen = pickle.load(fp)
+
     # load as tensorflow datasets for easy handling
     train_ds = tf.data.Dataset.from_tensor_slices((train_dataset["data"], train_dataset["stiffness"])) \
         .shuffle(50) \
@@ -31,6 +36,11 @@ def do_regression(args):
     test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"])) \
         .shuffle(50) \
         .batch(args.batch_size)
+
+    unseen_ds = None
+    if unseen is not None:
+        unseen_ds = tf.data.Dataset.from_tensor_slices((unseen["data"], unseen["stiffness"]))\
+            .batch(args.batch_size)
 
     # create tensorflow writers
     os.makedirs(args.results, exist_ok=True)
@@ -87,18 +97,33 @@ def do_regression(args):
             rms = tf.losses.mean_squared_error(y_test, predictions, reduction=tf.losses.Reduction.NONE)
             test_loss(rms)
             test_rms.append(rms)
-            with tf.contrib.summary.always_record_summaries():
-                tf.contrib.summary.scalar('test/loss', tf.reduce_mean(rms), step=k)
-                tf.contrib.summary.scalar('test/absolute', tf.sqrt(tf.reduce_mean(rms)), step=n)
-                test_writer.flush()
-            k += 1
 
-        template = 'Epoch {}\tTest ABSRMS: {}'
-        test_rms = tf.sqrt(tf.reduce_mean(tf.concat(test_rms, 0)))
-        print(template.format(epoch + 1, test_rms))
+        test_rms = tf.reduce_mean(tf.concat(test_rms, 0))
+        with tf.contrib.summary.always_record_summaries():
+            tf.contrib.summary.scalar('test/loss', test_rms, step=k)
+            tf.contrib.summary.scalar('test/absolute', tf.sqrt(test_rms), step=k)
+            test_writer.flush()
+        k += 1
+
+        # check the unseen dataset
+        unseen_rms = None
+        if unseen is not None and unseen_ds is not None:
+            rms_list = list()
+            for x, y in unseen_ds:
+                predictions = model((x - train_mean) / train_std, training=False)
+                rms = tf.losses.mean_squared_error(y, predictions, reduction=tf.losses.Reduction.NONE)
+                rms_list.append(rms)
+            unseen_rms = tf.reduce_mean(tf.concat(rms_list, 0))
+
+        if unseen_rms is not None:
+            template = 'Epoch {}\tTest ABSRMS: {}, Unseen ABSRMS: {}'
+            print(template.format(epoch + 1, tf.sqrt(test_rms), tf.sqrt(unseen_rms)))
+        else:
+            template = 'Epoch {}\tTest ABSRMS: {}'
+            print(template.format(epoch + 1, tf.sqrt(test_rms)))
+
+        # assign eta and reset the metrics for the next epoch
         eta.assign(eta_value())
-
-        # Reset the metrics for the next epoch
         train_loss.reset_states()
         test_loss.reset_states()
 
@@ -111,6 +136,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data-path-train', type=str, default="./data/dataset/full_ds/train_dataset.pickle")
     parser.add_argument('--data-path-test', type=str, default="./data/dataset/full_ds/test_dataset.pickle")
+    parser.add_argument('--data-path-unseen', type=str, default="./data/dataset/full_ds/unseen.pickle")
     parser.add_argument('--results', type=str, default="./data/logs")
     parser.add_argument('--epochs', type=int, default=9999)
     parser.add_argument('--batch-size', type=int, default=128)

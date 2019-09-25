@@ -1,5 +1,5 @@
 # Author: Michał Bednarek PUT Poznan
-# Comment: RNN + FC network implemented in Tensorflow for regression of stiffness of the gripped object.
+# Comment: Just a testing script.
 
 import numpy as np
 from argparse import ArgumentParser
@@ -22,32 +22,33 @@ def do_regression(args):
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
 
-    test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"])) \
-        .shuffle(50) \
-        .batch(args.batch_size)
+    test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"])).batch(
+        args.batch_size)
 
     # setup model
     model = RNN(args.batch_size)
     ckpt = tf.train.Checkpoint(model=model)
-    ckpt.restore(args.results_dir)
+    path = tf.train.latest_checkpoint(args.results_dir)
+    ckpt.restore(path)
 
     # start training
-    n, k = 0, 0
+    k = 0
     test_rms = list()
-    for x_test, y_test in test_ds:
-        predictions = model((x_test - train_mean) / train_std, training=False)
-        rms = tf.losses.mean_squared_error(y_test, predictions, reduction=tf.losses.Reduction.NONE)
+    for x, y in test_ds:
+        predictions = model((x - train_mean) / train_std, training=False)
+        rms = tf.losses.mean_squared_error(y, predictions, reduction=tf.losses.Reduction.NONE)
         test_rms.append(rms)
         k += 1
 
-    test_rms = tf.sqrt(tf.reduce_mean(tf.concat(test_rms, 0)))
-    print("Unseen dataset result: {}".format(test_rms))
+    # print results
+    absrms = tf.sqrt(tf.reduce_mean(tf.concat(test_rms, 0)))
+    print("Unseen dataset result: {}".format(absrms))
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data-path-train', type=str, default="./data/dataset/full_ds/train_dataset.pickle")
-    parser.add_argument('--data-path-test', type=str, default="./data/dataset/full_ds/unseen.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/full_ds/test_dataset.pickle")
     parser.add_argument('--results-dir', type=str, default="./data/logs/CNN_RNN_FC")
     parser.add_argument('--epochs', type=int, default=9999)
     parser.add_argument('--batch-size', type=int, default=128)
