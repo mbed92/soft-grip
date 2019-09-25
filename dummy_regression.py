@@ -42,7 +42,7 @@ class RNN(tf.keras.Model):
         inputs = tf.cast(inputs, tf.float32)
         cnn = self.CNN(inputs, training=training)
         lstm = self.BIDIRECTIONAL(cnn, training=training)
-        return tf.squeeze(self.estimator(lstm, training=training), 1)
+        return tf.squeeze(self.FC(lstm, training=training), 1)
 
 
 def do_regression(args):
@@ -134,10 +134,10 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str, default="./data/dataset/train_dataset.pickle")
-    parser.add_argument('--data-path-test', type=str, default="./data/dataset/test_dataset.pickle")
+    parser.add_argument('--data-path-train', type=str, default="./data/dataset/full_ds/train_dataset.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/full_ds/test_dataset.pickle")
     parser.add_argument('--results', type=str, default="./data/logs")
     parser.add_argument('--epochs', type=int, default=9999)
-    parser.add_argument('--batch-size', type=int, default=15)
+    parser.add_argument('--batch-size', type=int, default=128)
     args, _ = parser.parse_known_args()
     do_regression(args)
