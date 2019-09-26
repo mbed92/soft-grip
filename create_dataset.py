@@ -9,7 +9,7 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 1
+NUM_EPISODES = 5000
 MAX_ITER_PER_EP = 100
 OPEN_CLOSE_DIV = 40
 
@@ -41,7 +41,7 @@ def log_into_file(args):
 
             # gather readings and mask out data when there is no contact
             readings, contact = env.step()
-            if contact:
+            if not contact:
                 readings = np.zeros_like(readings)
             if readings is not None:
                 samples.append(readings)
@@ -70,10 +70,10 @@ def log_into_file(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--sim-step', type=int, default=10)
-    parser.add_argument('--vis', type=bool, default=True)
+    parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset/ds_IMU_with_contact_sense_full")
-    parser.add_argument('--data-name', type=str, default="unseen")
+    parser.add_argument('--data-name', type=str, default="train_dataset")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)

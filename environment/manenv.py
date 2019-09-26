@@ -77,7 +77,7 @@ class ManEnv(Env):
                 is_contact_between_fingers_and_object = True
                 break
 
-        return data.sensordata, is_contact_between_fingers_and_object
+        return np.copy(data.sensordata), is_contact_between_fingers_and_object
 
     def toggle_grip(self):
         if self.is_closing:
