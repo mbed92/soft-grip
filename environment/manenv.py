@@ -59,6 +59,8 @@ class ManEnv(Env):
 
     def get_sensor_sensordata(self):
         data = self.env.data
+
+        # return true when all fingers can contact an object's body
         is_contact_between_fingers_and_object = False
         fingers_left = self.finger_names
         for coni in range(data.ncon):
@@ -71,7 +73,6 @@ class ManEnv(Env):
                         is_finger_contact = bool(finger_name in body1_name or finger_name in body2_name)
                         if is_finger_contact:
                             fingers_left.remove(finger_name)
-
             if len(fingers_left) == 0:
                 is_contact_between_fingers_and_object = True
                 break

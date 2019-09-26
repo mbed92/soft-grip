@@ -9,7 +9,7 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 500
+NUM_EPISODES = 1
 MAX_ITER_PER_EP = 100
 OPEN_CLOSE_DIV = 40
 
@@ -39,11 +39,10 @@ def log_into_file(args):
             if i % OPEN_CLOSE_DIV == 0:
                 env.toggle_grip()
 
-            # gather readings
+            # gather readings and mask out data when there is no contact
             readings, contact = env.step()
-
-            print(contact)
-
+            if contact:
+                readings = np.zeros_like(readings)
             if readings is not None:
                 samples.append(readings)
 
