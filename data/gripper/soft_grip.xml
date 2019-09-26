@@ -328,7 +328,7 @@
             <site site="s138"/>
         </spatial>
 
-        <spatial name="grip_r_1" width="0.002" rgba=".95 .3 .3 1">
+        <spatial name="grip_r_21" width="0.002" rgba=".95 .3 .3 1">
             <site site="sBase"/>
             <site site="s22"/>
             <site site="s23"/>
@@ -345,7 +345,7 @@
         <cylinder tendon="grip_l_11" area="300"/>
         <cylinder tendon="grip_l_12" area="300"/>
         <cylinder tendon="grip_l_13" area="300"/>
-        <cylinder tendon="grip_r_1"  area="300"/>
+        <cylinder tendon="grip_r_21"  area="300"/>
     </actuator>
 
     <!-- SENSORS -->
@@ -359,5 +359,6 @@
         <gyro name="g12_sensor" site="s126"/>
         <gyro name="g13_sensor" site="s136"/>
         <gyro name="g21_sensor" site="s26"/>
+
     </sensor>
 </mujoco>

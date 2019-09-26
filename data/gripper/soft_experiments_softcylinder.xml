@@ -6,7 +6,7 @@
         <body pos="1.4 -0.04 1.05">
             <freejoint/>
             <composite type="cylinder" count="7 7 7" spacing="0.32">
-                <skin texcoord="true" material="matmarshmallow"/>
+<!--                <skin texcoord="true" material="matmarshmallow"/>-->
                 <geom type="capsule" size=".15 0.2" rgba=".8 .2 .1 1" mass="0.003" contype="0" conaffinity="1"/>
                 <joint kind="main" stiffness="1" damping="1" solreffix="-0.02 -1"/>
                 <tendon kind="main" stiffness="1" damping="1" solreffix="-0.02 -1"/>

@@ -8,6 +8,10 @@ class ManEnv(Env):
     joint_ids = list(range(34, 251))
     tendon_ids = list(range(1))
 
+    # list of bodies that are check for collision (partial names are enough)
+    finger_names = ('g1', 'g2')
+    obj_name = 'OBJ'
+
     def __init__(self, sim_start, sim_step, env_paths, is_vis=True):
         super().__init__(sim_start, sim_step)
 
@@ -54,7 +58,23 @@ class ManEnv(Env):
         return current_stiffness
 
     def get_sensor_sensordata(self):
-        return self.env.data.sensordata
+        data = self.env.data
+        is_contact_between_fingers_and_object = False
+        for coni in range(data.ncon):
+            contact = data.contact[coni]
+            body1_name = self.env.model.geom_id2name(contact.geom1)
+            body2_name = self.env.model.geom_id2name(contact.geom2)
+
+            if body1_name is not None and body2_name is not None:
+                c1 = bool((self.obj_name in body1_name and (
+                            self.finger_names[0] in body2_name or self.finger_names[1] in body2_name)))
+                c2 = bool((self.obj_name in body2_name and (
+                            self.finger_names[0] in body1_name or self.finger_names[1] in body1_name)))
+                if c1 or c2:
+                    is_contact_between_fingers_and_object = True
+                    break
+
+        return data.sensordata, is_contact_between_fingers_and_object
 
     def toggle_grip(self):
         if self.is_closing:
