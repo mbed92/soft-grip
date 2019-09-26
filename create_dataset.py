@@ -69,7 +69,7 @@ if __name__ == '__main__':
     parser.add_argument('--sim-step', type=int, default=10)
     parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
-    parser.add_argument('--data-folder', type=str, default="./data/dataset/full_ds")
+    parser.add_argument('--data-folder', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full")
     parser.add_argument('--data-name', type=str, default="unseen")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
