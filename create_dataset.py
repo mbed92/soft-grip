@@ -41,7 +41,7 @@ def log_into_file(args):
 
             # gather readings and mask out data when there is no contact
             readings, contact = env.step()
-            if not contact:
+            if args.mask_contact and not contact:
                 readings = np.zeros_like(readings)
             if readings is not None:
                 samples.append(readings)
@@ -71,6 +71,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--sim-step', type=int, default=10)
     parser.add_argument('--vis', type=bool, default=False)
+    parser.add_argument('--mask-contact', type=bool, default=True)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset/ds_IMU_with_contact_sense_full")
     parser.add_argument('--data-name', type=str, default="train_dataset")
