@@ -22,6 +22,7 @@ def log_into_file(args):
     env_spec = ManEnv.get_std_spec(args)
     env = ManEnv(**env_spec)
 
+    os.makedirs(args.data_folder, exist_ok=True)
     path = os.path.join(args.data_folder, "{}.pickle".format(args.data_name))
     file = open(path, 'wb')
     data, stiffness = list(), list()
@@ -69,7 +70,7 @@ def log_into_file(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--sim-step', type=int, default=10)
+    parser.add_argument('--sim-step', type=int, default=5000)
     parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--mask-contact', type=bool, default=True)
     parser.add_argument('--sim-start', type=int, default=1)
