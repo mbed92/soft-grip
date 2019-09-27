@@ -31,41 +31,80 @@ def create_tf_generators(train_dataset, train_idx, val_idx):
     return train_ds, val_ds
 
 
-def validate(model, writer, ds, mean, std, rms_name, abs_name, previous_steps):
+def validate(model, writer, ds, mean, std, abs_name, previous_steps):
     writer.set_as_default()
-    rms_list, proc = list(), list()
+
+    mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    num_elements = 0
     for x_val, y_val in ds:
+        x_val = tf.cast(x_val, tf.float32)
+        y_val = tf.cast(y_val, tf.float32)
+
         predictions = model((x_val - mean) / std, training=False)
         rms = tf.losses.mean_squared_error(y_val, predictions, reduction=tf.losses.Reduction.NONE)
-        rms_list.append(rms)
-        proc.append(tf.reduce_mean(tf.abs(tf.sqrt(rms)) / tf.cast(y_val, tf.float32)))
-    valrms = tf.reduce_mean(tf.concat(rms_list, 0))
+
+        # gather stats
+        absolute = tf.sqrt(rms)
+        mean_abs += tf.reduce_mean(absolute)
+        mean_rms += tf.reduce_mean(rms)
+        mean_proc_abs += tf.abs(tf.reduce_mean(y_val / predictions))
+        stddev_abs += tf.math.reduce_std(absolute)
+        stddev_rms += tf.math.reduce_std(rms)
+        stddev_proc_abs += tf.abs(tf.math.reduce_std(y_val / predictions))
+        num_elements += 1
+
+    valabs = mean_abs / num_elements
     with tf.contrib.summary.always_record_summaries():
-        tf.contrib.summary.scalar(rms_name, valrms, step=previous_steps)
-        tf.contrib.summary.scalar(abs_name, tf.sqrt(valrms), step=previous_steps)
+        tf.contrib.summary.scalar(abs_name, valabs, step=previous_steps)
         writer.flush()
     previous_steps += 1
-    return previous_steps, rms_list, proc
+
+    return previous_steps, {
+        "mean_abs:": mean_abs / num_elements,
+        "mean_rms:": mean_rms / num_elements,
+        "mean_proc_abs:": mean_proc_abs / num_elements,
+        "stddev_abs:": stddev_abs / num_elements,
+        "stddev_rms:": stddev_rms / num_elements,
+        "stddev_proc_abs:": stddev_proc_abs / num_elements}
 
 
-def train(model, writer, ds, mean, std, optimizer, rms_name, abs_name, previous_steps):
+def train(model, writer, ds, mean, std, optimizer, abs_name, previous_steps):
     writer.set_as_default()
-    rms_list, proc = list(), list()
+    mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    num_elements = 0
     for x_train, y_train in ds:
+        x_train = tf.cast(x_train, tf.float32)
+        y_train = tf.cast(y_train, tf.float32)
+
         with tf.GradientTape() as tape:
             predictions = model((x_train - mean) / std, training=True)
             rms = tf.losses.mean_squared_error(y_train, predictions, reduction=tf.losses.Reduction.NONE)
-            rms_list.append(rms)
-            proc.append(tf.reduce_mean(tf.abs(tf.sqrt(rms)) / tf.cast(y_train, tf.float32)))
+
+            # gather stats
+            absolute = tf.sqrt(rms)
+            mean_abs += tf.reduce_mean(absolute)
+            mean_rms += tf.reduce_mean(rms)
+            mean_proc_abs += tf.abs(tf.reduce_mean(y_train / predictions))
+            stddev_abs += tf.math.reduce_std(absolute)
+            stddev_rms += tf.math.reduce_std(rms)
+            stddev_proc_abs += tf.abs(tf.math.reduce_std(y_train / predictions))
+            num_elements += 1
 
         gradients = tape.gradient(rms, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        trainabs = mean_abs / num_elements
         with tf.contrib.summary.always_record_summaries():
-            tf.contrib.summary.scalar(rms_name, tf.reduce_mean(rms), step=previous_steps)
-            tf.contrib.summary.scalar(abs_name, tf.sqrt(tf.reduce_mean(rms)), step=previous_steps)
+            tf.contrib.summary.scalar(abs_name, trainabs, step=previous_steps)
             writer.flush()
         previous_steps += 1
-    return previous_steps, rms_list, proc
+
+    return previous_steps, {
+        "mean_abs:": mean_abs / num_elements,
+        "mean_rms:": mean_rms / num_elements,
+        "mean_proc_abs:": mean_proc_abs / num_elements,
+        "stddev_abs:": stddev_abs / num_elements,
+        "stddev_rms:": stddev_rms / num_elements,
+        "stddev_proc_abs:": stddev_proc_abs / num_elements}
 
 
 def do_regression(args):
@@ -98,7 +137,7 @@ def do_regression(args):
                                optimizer_step=tf.train.get_or_create_global_step())
 
     # start a cross validate training
-    kf = KFold(n_splits=10)
+    kf = KFold(n_splits=args.num_splits)
     train_dataset["data"] = np.asarray(
         train_dataset["data"])  # needed as an array, because train_idx, val_idx are returned this way
     train_dataset["stiffness"] = np.asarray(train_dataset["stiffness"])
@@ -124,37 +163,29 @@ def do_regression(args):
                 .batch(args.batch_size)
 
         # start training // add metrics to tensorboard and save results for postprocessing
-        plot_name_training_rms = 'train_{}/loss'.format(split_no)
         plot_name_training_abs = 'train_{}/abs'.format(split_no)
-        plot_name_validate_rms = 'val_{}/rms'.format(split_no)
         plot_name_validate_abs = 'val_{}/abs'.format(split_no)
-        plot_name_unseen_rms = 'unseen_{}/rms'.format(split_no)
         plot_name_unseen_abs = 'unseen_{}/abs'.format(split_no)
         train_step, val_step, unseen_step = 0, 0, 0
-        train_results, val_results, unseen_results, train_proc_res, val_proc_res, unseeproc_res = list(), list(), list(), list(), list(), list()
+        train_results, val_results, unseen_results = list(), list(), list()
         for epoch in tqdm(range(args.epochs)):
-            train_step, t_results, tproc_results = train(model, train_writer, train_ds, train_mean, train_std,
-                                                         optimizer,
-                                                         plot_name_training_rms, plot_name_training_abs, train_step)
-            val_step, v_results, vproc_results = validate(model, val_writer, val_ds, train_mean, train_std,
-                                                          plot_name_validate_rms, plot_name_validate_abs, val_step)
+            train_step, train_metrics = train(model, train_writer, train_ds, train_mean, train_std,
+                                              optimizer, plot_name_training_abs, train_step)
+            val_step, val_metrics = validate(model, val_writer, val_ds, train_mean, train_std,
+                                             plot_name_validate_abs, val_step)
 
             # check the unseen dataset if needed and save to list
-            train_results.append(t_results)
-            val_results.append(v_results)
-            train_proc_res.append(tproc_results)
-            val_proc_res.append(vproc_results)
+            train_results.append(train_metrics)
+            val_results.append(val_metrics)
             if unseen is not None and unseen_ds is not None:
-                unseen_step, u_results, uproc_results = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
-                                                                 plot_name_unseen_rms, plot_name_unseen_abs,
-                                                                 unseen_step)
-                unseen_results.append(u_results)
-                unseeproc_res.append(uproc_results)
+                unseen_step, unseen_metrics = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
+                                                       plot_name_unseen_abs, unseen_step)
+                unseen_results.append(unseen_metrics)
 
             # assign eta and reset the metrics for the next epoch
             eta.assign(eta_value())
 
-            # save each 100 epochs
+            # save each 10 epochs
             if epoch % 10 == 0:
                 ckpt_man.save()
 
@@ -178,7 +209,8 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-unseen', type=str,
                         default="./data/dataset/ds_IMU_no_contact_sense_full/unseen.pickle")
     parser.add_argument('--results', type=str, default="./data/logs/cross_validated")
-    parser.add_argument('--epochs', type=int, default=3)
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--epochs', type=int, default=250)
+    parser.add_argument('--batch-size', type=int, default=256)
+    parser.add_argument('--num-splits', type=int, default=5)
     args, _ = parser.parse_known_args()
     do_regression(args)
