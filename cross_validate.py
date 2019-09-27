@@ -33,13 +33,11 @@ def create_tf_generators(train_dataset, train_idx, val_idx):
 
 def validate(model, writer, ds, mean, std, abs_name, previous_steps):
     writer.set_as_default()
-
     mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     num_elements = 0
     for x_val, y_val in ds:
         x_val = tf.cast(x_val, tf.float32)
         y_val = tf.cast(y_val, tf.float32)
-
         predictions = model((x_val - mean) / std, training=False)
         rms = tf.losses.mean_squared_error(y_val, predictions, reduction=tf.losses.Reduction.NONE)
 
@@ -60,7 +58,7 @@ def validate(model, writer, ds, mean, std, abs_name, previous_steps):
     previous_steps += 1
 
     return previous_steps, {
-        "mean_abs:": mean_abs / num_elements,
+        "mean_abs:": valabs,
         "mean_rms:": mean_rms / num_elements,
         "mean_proc_abs:": mean_proc_abs / num_elements,
         "stddev_abs:": stddev_abs / num_elements,
@@ -191,11 +189,11 @@ def do_regression(args):
 
         # dump data
         obj = {
-            "train_results": train_results,
-            "val_results": val_results
+            "split_training_results": train_results,
+            "split_validation_results": val_results
         }
         if unseen_ds is not None:
-            obj['unseen_results'] = unseen_results
+            obj['split_unseen_results'] = unseen_results
         pickle.dump(obj, metrics)
         metrics.close()
 
@@ -209,7 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-unseen', type=str,
                         default="./data/dataset/ds_IMU_no_contact_sense_full/unseen.pickle")
     parser.add_argument('--results', type=str, default="./data/logs/cross_validated")
-    parser.add_argument('--epochs', type=int, default=250)
+    parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=256)
     parser.add_argument('--num-splits', type=int, default=5)
     args, _ = parser.parse_known_args()
