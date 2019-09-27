@@ -33,40 +33,39 @@ def create_tf_generators(train_dataset, train_idx, val_idx):
 
 def validate(model, writer, ds, mean, std, rms_name, abs_name, previous_steps):
     writer.set_as_default()
-    rms_list = list()
-    step = previous_steps
-    for x_test, y_test in ds:
-        predictions = model((x_test - mean) / std, training=False)
-        rms = tf.losses.mean_squared_error(y_test, predictions, reduction=tf.losses.Reduction.NONE)
+    rms_list, proc = list(), list()
+    for x_val, y_val in ds:
+        predictions = model((x_val - mean) / std, training=False)
+        rms = tf.losses.mean_squared_error(y_val, predictions, reduction=tf.losses.Reduction.NONE)
         rms_list.append(rms)
+        proc.append(tf.reduce_mean(tf.abs(tf.sqrt(rms)) / tf.cast(y_val, tf.float32)))
     valrms = tf.reduce_mean(tf.concat(rms_list, 0))
     with tf.contrib.summary.always_record_summaries():
-        tf.contrib.summary.scalar(rms_name, valrms, step=step)
-        tf.contrib.summary.scalar(abs_name, tf.sqrt(valrms), step=step)
+        tf.contrib.summary.scalar(rms_name, valrms, step=previous_steps)
+        tf.contrib.summary.scalar(abs_name, tf.sqrt(valrms), step=previous_steps)
         writer.flush()
-    step += 1
-    return step, rms_list
+    previous_steps += 1
+    return previous_steps, rms_list, proc
 
 
-def train(model, writer, ds, mean, std, regularizer, optimizer, rms_name, abs_name, previous_steps):
+def train(model, writer, ds, mean, std, optimizer, rms_name, abs_name, previous_steps):
     writer.set_as_default()
-    step = previous_steps
-    rms_list = list()
+    rms_list, proc = list(), list()
     for x_train, y_train in ds:
         with tf.GradientTape() as tape:
             predictions = model((x_train - mean) / std, training=True)
             rms = tf.losses.mean_squared_error(y_train, predictions, reduction=tf.losses.Reduction.NONE)
             rms_list.append(rms)
-            # reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
-            # removed regularization, because batchnorm + weight decay + Adam == only gradient descent
+            proc.append(tf.reduce_mean(tf.abs(tf.sqrt(rms)) / tf.cast(y_train, tf.float32)))
+
         gradients = tape.gradient(rms, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         with tf.contrib.summary.always_record_summaries():
-            tf.contrib.summary.scalar(rms_name, tf.reduce_mean(rms), step=step)
-            tf.contrib.summary.scalar(abs_name, tf.sqrt(tf.reduce_mean(rms)), step=step)
+            tf.contrib.summary.scalar(rms_name, tf.reduce_mean(rms), step=previous_steps)
+            tf.contrib.summary.scalar(abs_name, tf.sqrt(tf.reduce_mean(rms)), step=previous_steps)
             writer.flush()
-        step += 1
-    return step, rms_list
+        previous_steps += 1
+    return previous_steps, rms_list, proc
 
 
 def do_regression(args):
@@ -83,8 +82,7 @@ def do_regression(args):
     # setup model
     model = RNN(args.batch_size)
 
-    # add eta decay and regularizer
-    regularizer = tf.keras.regularizers.l2(1e-5)
+    # add eta decay
     eta = tf.contrib.eager.Variable(1e-3)
     eta_value = tf.train.exponential_decay(
         1e-3,
@@ -104,6 +102,7 @@ def do_regression(args):
     train_dataset["data"] = np.asarray(
         train_dataset["data"])  # needed as an array, because train_idx, val_idx are returned this way
     train_dataset["stiffness"] = np.asarray(train_dataset["stiffness"])
+    os.makedirs(args.results, exist_ok=True)
     for split_no, (train_idx, val_idx) in enumerate(kf.split(train_dataset["data"], train_dataset["stiffness"])):
         # create pickle to dump metrics from each split
         logs_path = os.path.join(args.results, '{}'.format(split_no))
@@ -132,20 +131,25 @@ def do_regression(args):
         plot_name_unseen_rms = 'unseen_{}/rms'.format(split_no)
         plot_name_unseen_abs = 'unseen_{}/abs'.format(split_no)
         train_step, val_step, unseen_step = 0, 0, 0
-        train_results, val_results, unseen_results = list(), list(), list()
+        train_results, val_results, unseen_results, train_proc_res, val_proc_res, unseeproc_res = list(), list(), list(), list(), list(), list()
         for epoch in tqdm(range(args.epochs)):
-            train_step, t_results = train(model, train_writer, train_ds, train_mean, train_std, regularizer, optimizer,
-                                          plot_name_training_rms, plot_name_training_abs, train_step)
-            train_results.append(t_results)
-            val_step, v_results = validate(model, val_writer, val_ds, train_mean, train_std,
-                                           plot_name_validate_rms, plot_name_validate_abs, val_step)
-            val_results.append(t_results)
+            train_step, t_results, tproc_results = train(model, train_writer, train_ds, train_mean, train_std,
+                                                         optimizer,
+                                                         plot_name_training_rms, plot_name_training_abs, train_step)
+            val_step, v_results, vproc_results = validate(model, val_writer, val_ds, train_mean, train_std,
+                                                          plot_name_validate_rms, plot_name_validate_abs, val_step)
 
-            # check the unseen dataset also
+            # check the unseen dataset if needed and save to list
+            train_results.append(t_results)
+            val_results.append(v_results)
+            train_proc_res.append(tproc_results)
+            val_proc_res.append(vproc_results)
             if unseen is not None and unseen_ds is not None:
-                unseen_step, u_results = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
-                                                  plot_name_unseen_rms, plot_name_unseen_abs, unseen_step)
+                unseen_step, u_results, uproc_results = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
+                                                                 plot_name_unseen_rms, plot_name_unseen_abs,
+                                                                 unseen_step)
                 unseen_results.append(u_results)
+                unseeproc_res.append(uproc_results)
 
             # assign eta and reset the metrics for the next epoch
             eta.assign(eta_value())
@@ -174,7 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-unseen', type=str,
                         default="./data/dataset/ds_IMU_no_contact_sense_full/unseen.pickle")
     parser.add_argument('--results', type=str, default="./data/logs/cross_validated")
-    parser.add_argument('--epochs', type=int, default=300)
+    parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--batch-size', type=int, default=128)
     args, _ = parser.parse_known_args()
     do_regression(args)

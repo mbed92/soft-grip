@@ -45,7 +45,7 @@ class ManEnv(Env):
         except mujoco_py.builder.MujocoException:
             self.reset()
 
-        return np.array(self.get_sensor_sensordata()).reshape(-1)
+        return np.asanyarray(self.get_sensor_sensordata()).reshape(-1)
 
     def reset(self):
         current_stiffness = self.set_new_stiffness()
