@@ -127,7 +127,7 @@ def do_regression(args):
         train_loss.reset_states()
         test_loss.reset_states()
 
-        # save each 100 epochs
+        # save each 10 epochs
         if epoch % 10 == 0:
             ckpt_man.save()
 
