@@ -4,11 +4,13 @@
 import numpy as np
 from argparse import ArgumentParser
 import tensorflow as tf
-import pickle, os
+import pickle
+import os
 
 from sklearn.model_selection import KFold
 from tqdm import tqdm
 from net import RNN
+from functions import *
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -17,27 +19,13 @@ tf.keras.backend.set_session(tf.Session(config=config))
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-def create_tf_generators(train_dataset, train_idx, val_idx):
-    train_x = train_dataset["data"][train_idx]
-    train_y = train_dataset["stiffness"][train_idx]
-    val_x = train_dataset["data"][val_idx]
-    val_y = train_dataset["stiffness"][val_idx]
-    train_ds = tf.data.Dataset.from_tensor_slices((train_x, train_y)) \
-        .shuffle(50) \
-        .batch(args.batch_size)
-    val_ds = tf.data.Dataset.from_tensor_slices((val_x, val_y)) \
-        .shuffle(50) \
-        .batch(args.batch_size)
-    return train_ds, val_ds
-
-
-def validate(model, writer, ds, mean, std, previous_steps, split_no, prefix="validation"):
+def validate(model, writer, ds, mean, std, previous_steps, prefix="validation"):
     writer.set_as_default()
     mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     num_elements = 0
     for x_val, y_val in ds:
-        x_val = tf.cast(x_val, tf.float32)
-        y_val = tf.cast(y_val, tf.float32)
+        x_val, y_val = tf.cast(x_val, tf.float32), tf.cast(y_val, tf.float32)
+
         predictions = model((x_val - mean) / std, training=False)
         rms = tf.losses.mean_squared_error(y_val, predictions, reduction=tf.losses.Reduction.NONE)
 
@@ -45,38 +33,33 @@ def validate(model, writer, ds, mean, std, previous_steps, split_no, prefix="val
         absolute = tf.sqrt(rms)
         mean_abs += tf.reduce_mean(absolute)
         mean_rms += tf.reduce_mean(rms)
-        mean_proc_abs += tf.abs(100 - tf.reduce_mean(predictions / y_val) * 100)
+        mean_proc_abs += 100 - tf.reduce_mean(predictions / y_val) * 100
         stddev_abs += tf.math.reduce_std(absolute)
         stddev_rms += tf.math.reduce_std(rms)
-        stddev_proc_abs += tf.abs(100 - tf.math.reduce_std(predictions / y_val) * 100)
+        stddev_proc_abs += tf.math.reduce_std(predictions / y_val)
         num_elements += 1
 
-    valrms = mean_rms / num_elements
-    valabs = mean_abs / num_elements
-    valproc = mean_proc_abs / num_elements
-    with tf.contrib.summary.always_record_summaries():
-        tf.contrib.summary.scalar('{}_{}/mean_RMS_error'.format(prefix, split_no), valrms, step=previous_steps)
-        tf.contrib.summary.scalar('{}_{}/mean_ABS_error'.format(prefix, split_no), valabs, step=previous_steps)
-        tf.contrib.summary.scalar('{}_{}/mean_proc_abs_error'.format(prefix, split_no), valproc, step=previous_steps)
-        writer.flush()
+    add_to_tensorboard({
+        "mean_rms": mean_rms,
+        "mean_abs": mean_abs,
+        "mean_proc_abs": mean_proc_abs}, num_elements, writer, previous_steps, prefix)
     previous_steps += 1
 
     return previous_steps, {
-        "mean_abs:": valabs,
-        "mean_rms:": valrms,
-        "mean_proc_abs:": valproc,
+        "mean_abs:": mean_rms / num_elements,
+        "mean_rms:": mean_rms / num_elements,
+        "mean_proc_abs:": mean_proc_abs / num_elements,
         "stddev_abs:": stddev_abs / num_elements,
         "stddev_rms:": stddev_rms / num_elements,
         "stddev_proc_abs:": stddev_proc_abs / num_elements}
 
 
-def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no, prefix="train"):
+def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train"):
     writer.set_as_default()
     mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     num_elements = 0
     for x_train, y_train in ds:
-        x_train = tf.cast(x_train, tf.float32)
-        y_train = tf.cast(y_train, tf.float32)
+        x_train, y_train = tf.cast(x_train, tf.float32), tf.cast(y_train, tf.float32)
 
         with tf.GradientTape() as tape:
             predictions = model((x_train - mean) / std, training=True)
@@ -89,20 +72,14 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no, pre
             mean_proc_abs += 100 - tf.reduce_mean(predictions / y_train) * 100
             stddev_abs += tf.math.reduce_std(absolute)
             stddev_rms += tf.math.reduce_std(rms)
-            stddev_proc_abs += 100 - tf.math.reduce_std(predictions / y_train) * 100
+            stddev_proc_abs += tf.math.reduce_std(predictions / y_train)
             num_elements += 1
 
-        gradients = tape.gradient(rms, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
-        trainrms = mean_rms / num_elements
-        trainabs = mean_abs / num_elements
-        trainproc = mean_proc_abs / num_elements
-        with tf.contrib.summary.always_record_summaries():
-            tf.contrib.summary.scalar('{}_{}/mean_RMS_error'.format(prefix, split_no), trainrms, step=previous_steps)
-            tf.contrib.summary.scalar('{}_{}/mean_ABS_error'.format(prefix, split_no), trainabs, step=previous_steps)
-            tf.contrib.summary.scalar('{}_{}/mean_proc_abs_error'.format(prefix, split_no), trainproc, step=previous_steps)
-            writer.flush()
+        optimize(optimizer, tape, rms, model.trainable_variables)
+        add_to_tensorboard({
+            "mean_rms": mean_rms,
+            "mean_abs": mean_abs,
+            "mean_proc_abs": mean_proc_abs}, num_elements, writer, previous_steps, prefix)
         previous_steps += 1
 
     return previous_steps, {
@@ -163,7 +140,7 @@ def do_regression(args):
             logs_path)
 
         # create split datasets to tf generators
-        train_ds, val_ds = create_tf_generators(train_dataset, train_idx, val_idx)
+        train_ds, val_ds = create_tf_generators(train_dataset, train_idx, val_idx, args.batch_size)
         unseen_ds = None
         if unseen is not None:
             unseen_ds = tf.data.Dataset.from_tensor_slices((unseen["data"], unseen["stiffness"])) \
@@ -174,15 +151,15 @@ def do_regression(args):
         train_results, val_results, unseen_results = list(), list(), list()
         for epoch in tqdm(range(args.epochs)):
             train_step, train_metrics = train(model, train_writer, train_ds, train_mean, train_std, optimizer,
-                                              train_step, split_no)
-            val_step, val_metrics = validate(model, val_writer, val_ds, train_mean, train_std, val_step, split_no)
+                                              train_step)
+            val_step, val_metrics = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
 
             # check the unseen dataset if needed and save to list
             train_results.append(train_metrics)
             val_results.append(val_metrics)
             if unseen is not None and unseen_ds is not None:
                 unseen_step, unseen_metrics = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
-                                                       unseen_step, split_no, prefix="unseen")
+                                                       unseen_step, prefix="unseen")
                 unseen_results.append(unseen_metrics)
 
             # assign eta and reset the metrics for the next epoch
