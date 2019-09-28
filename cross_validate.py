@@ -45,19 +45,19 @@ def validate(model, writer, ds, mean, std, previous_steps, split_no):
         absolute = tf.sqrt(rms)
         mean_abs += tf.reduce_mean(absolute)
         mean_rms += tf.reduce_mean(rms)
-        mean_proc_abs += tf.abs(tf.reduce_mean(y_val / predictions))
+        mean_proc_abs += tf.abs(100 - tf.reduce_mean(predictions / y_val) * 100)
         stddev_abs += tf.math.reduce_std(absolute)
         stddev_rms += tf.math.reduce_std(rms)
-        stddev_proc_abs += tf.abs(tf.math.reduce_std(y_val / predictions))
+        stddev_proc_abs += tf.abs(100 - tf.math.reduce_std(predictions / y_val) * 100)
         num_elements += 1
 
     valrms = mean_rms / num_elements
     valabs = mean_abs / num_elements
     valproc = mean_proc_abs / num_elements
     with tf.contrib.summary.always_record_summaries():
-        tf.contrib.summary.scalar('validation_{}/mean_RMS'.format(split_no), valrms, step=previous_steps)
-        tf.contrib.summary.scalar('validation_{}/mean_ABS'.format(split_no), valabs, step=previous_steps)
-        tf.contrib.summary.scalar('validation_{}/mean_proc_abs'.format(split_no), valproc, step=previous_steps)
+        tf.contrib.summary.scalar('validation_{}/mean_RMS_error'.format(split_no), valrms, step=previous_steps)
+        tf.contrib.summary.scalar('validation_{}/mean_ABS_error'.format(split_no), valabs, step=previous_steps)
+        tf.contrib.summary.scalar('validation_{}/mean_proc_abs_error'.format(split_no), valproc, step=previous_steps)
         writer.flush()
     previous_steps += 1
 
@@ -86,10 +86,10 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no):
             absolute = tf.sqrt(rms)
             mean_abs += tf.reduce_mean(absolute)
             mean_rms += tf.reduce_mean(rms)
-            mean_proc_abs += tf.abs(tf.reduce_mean(y_train / predictions))
+            mean_proc_abs += 100 - tf.reduce_mean(predictions / y_train) * 100
             stddev_abs += tf.math.reduce_std(absolute)
             stddev_rms += tf.math.reduce_std(rms)
-            stddev_proc_abs += tf.abs(tf.math.reduce_std(y_train / predictions))
+            stddev_proc_abs += 100 - tf.math.reduce_std(predictions / y_train) * 100
             num_elements += 1
 
         gradients = tape.gradient(rms, model.trainable_variables)
@@ -99,9 +99,9 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no):
         trainabs = mean_abs / num_elements
         trainproc = mean_proc_abs / num_elements
         with tf.contrib.summary.always_record_summaries():
-            tf.contrib.summary.scalar('train_{}/mean_RMS'.format(split_no), trainrms, step=previous_steps)
-            tf.contrib.summary.scalar('train_{}/mean_ABS'.format(split_no), trainabs, step=previous_steps)
-            tf.contrib.summary.scalar('train_{}/mean_proc_abs'.format(split_no), trainproc, step=previous_steps)
+            tf.contrib.summary.scalar('train_{}/mean_RMS_error'.format(split_no), trainrms, step=previous_steps)
+            tf.contrib.summary.scalar('train_{}/mean_ABS_error'.format(split_no), trainabs, step=previous_steps)
+            tf.contrib.summary.scalar('train_{}/mean_proc_abs_error'.format(split_no), trainproc, step=previous_steps)
             writer.flush()
         previous_steps += 1
 
