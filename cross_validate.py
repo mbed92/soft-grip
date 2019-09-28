@@ -31,7 +31,7 @@ def create_tf_generators(train_dataset, train_idx, val_idx):
     return train_ds, val_ds
 
 
-def validate(model, writer, ds, mean, std, previous_steps, split_no):
+def validate(model, writer, ds, mean, std, previous_steps, split_no, prefix="validation"):
     writer.set_as_default()
     mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     num_elements = 0
@@ -55,9 +55,9 @@ def validate(model, writer, ds, mean, std, previous_steps, split_no):
     valabs = mean_abs / num_elements
     valproc = mean_proc_abs / num_elements
     with tf.contrib.summary.always_record_summaries():
-        tf.contrib.summary.scalar('validation_{}/mean_RMS_error'.format(split_no), valrms, step=previous_steps)
-        tf.contrib.summary.scalar('validation_{}/mean_ABS_error'.format(split_no), valabs, step=previous_steps)
-        tf.contrib.summary.scalar('validation_{}/mean_proc_abs_error'.format(split_no), valproc, step=previous_steps)
+        tf.contrib.summary.scalar('{}_{}/mean_RMS_error'.format(prefix, split_no), valrms, step=previous_steps)
+        tf.contrib.summary.scalar('{}_{}/mean_ABS_error'.format(prefix, split_no), valabs, step=previous_steps)
+        tf.contrib.summary.scalar('{}_{}/mean_proc_abs_error'.format(prefix, split_no), valproc, step=previous_steps)
         writer.flush()
     previous_steps += 1
 
@@ -70,7 +70,7 @@ def validate(model, writer, ds, mean, std, previous_steps, split_no):
         "stddev_proc_abs:": stddev_proc_abs / num_elements}
 
 
-def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no):
+def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no, prefix="train"):
     writer.set_as_default()
     mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     num_elements = 0
@@ -99,9 +99,9 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no):
         trainabs = mean_abs / num_elements
         trainproc = mean_proc_abs / num_elements
         with tf.contrib.summary.always_record_summaries():
-            tf.contrib.summary.scalar('train_{}/mean_RMS_error'.format(split_no), trainrms, step=previous_steps)
-            tf.contrib.summary.scalar('train_{}/mean_ABS_error'.format(split_no), trainabs, step=previous_steps)
-            tf.contrib.summary.scalar('train_{}/mean_proc_abs_error'.format(split_no), trainproc, step=previous_steps)
+            tf.contrib.summary.scalar('{}_{}/mean_RMS_error'.format(prefix, split_no), trainrms, step=previous_steps)
+            tf.contrib.summary.scalar('{}_{}/mean_ABS_error'.format(prefix, split_no), trainabs, step=previous_steps)
+            tf.contrib.summary.scalar('{}_{}/mean_proc_abs_error'.format(prefix, split_no), trainproc, step=previous_steps)
             writer.flush()
         previous_steps += 1
 
@@ -182,7 +182,7 @@ def do_regression(args):
             val_results.append(val_metrics)
             if unseen is not None and unseen_ds is not None:
                 unseen_step, unseen_metrics = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
-                                                       unseen_step, split_no)
+                                                       unseen_step, split_no, prefix="unseen")
                 unseen_results.append(unseen_metrics)
 
             # assign eta and reset the metrics for the next epoch
@@ -212,8 +212,8 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-unseen', type=str,
                         default="./data/dataset/ds_IMU_no_contact_sense_full/unseen.pickle")
     parser.add_argument('--results', type=str, default="./data/logs/cross_validated")
-    parser.add_argument('--epochs', type=int, default=2)
-    parser.add_argument('--batch-size', type=int, default=256)
+    parser.add_argument('--epochs', type=int, default=1)
+    parser.add_argument('--batch-size', type=int, default=512)
     parser.add_argument('--num-splits', type=int, default=5)
     args, _ = parser.parse_known_args()
     do_regression(args)
