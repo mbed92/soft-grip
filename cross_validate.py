@@ -146,7 +146,7 @@ def do_regression(args):
             unseen_ds = tf.data.Dataset.from_tensor_slices((unseen["data"], unseen["stiffness"])) \
                 .batch(args.batch_size)
 
-        # start training // add metrics to tensorboard and save results for postprocessing
+        # start training / add metrics to tensorboard and save results for postprocessing
         train_step, val_step, unseen_step = 0, 0, 0
         train_results, val_results, unseen_results = list(), list(), list()
         for epoch in tqdm(range(args.epochs)):
@@ -169,7 +169,7 @@ def do_regression(args):
             if epoch % 10 == 0:
                 ckpt_man.save()
 
-        # dump data
+        # dump data to the pickle
         obj = {
             "split_training_results": train_results,
             "split_validation_results": val_results
