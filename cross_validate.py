@@ -31,7 +31,7 @@ def create_tf_generators(train_dataset, train_idx, val_idx):
     return train_ds, val_ds
 
 
-def validate(model, writer, ds, mean, std, abs_name, previous_steps):
+def validate(model, writer, ds, mean, std, previous_steps, split_no):
     writer.set_as_default()
     mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     num_elements = 0
@@ -51,22 +51,26 @@ def validate(model, writer, ds, mean, std, abs_name, previous_steps):
         stddev_proc_abs += tf.abs(tf.math.reduce_std(y_val / predictions))
         num_elements += 1
 
+    valrms = mean_rms / num_elements
     valabs = mean_abs / num_elements
+    valproc = mean_proc_abs / num_elements
     with tf.contrib.summary.always_record_summaries():
-        tf.contrib.summary.scalar(abs_name, valabs, step=previous_steps)
+        tf.contrib.summary.scalar('validation_{}/mean_RMS'.format(split_no), valrms, step=previous_steps)
+        tf.contrib.summary.scalar('validation_{}/mean_ABS'.format(split_no), valabs, step=previous_steps)
+        tf.contrib.summary.scalar('validation_{}/mean_proc_abs'.format(split_no), valproc, step=previous_steps)
         writer.flush()
     previous_steps += 1
 
     return previous_steps, {
         "mean_abs:": valabs,
-        "mean_rms:": mean_rms / num_elements,
-        "mean_proc_abs:": mean_proc_abs / num_elements,
+        "mean_rms:": valrms,
+        "mean_proc_abs:": valproc,
         "stddev_abs:": stddev_abs / num_elements,
         "stddev_rms:": stddev_rms / num_elements,
         "stddev_proc_abs:": stddev_proc_abs / num_elements}
 
 
-def train(model, writer, ds, mean, std, optimizer, abs_name, previous_steps):
+def train(model, writer, ds, mean, std, optimizer, previous_steps, split_no):
     writer.set_as_default()
     mean_abs, mean_rms, stddev_abs, stddev_rms, mean_proc_abs, stddev_proc_abs = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     num_elements = 0
@@ -90,9 +94,14 @@ def train(model, writer, ds, mean, std, optimizer, abs_name, previous_steps):
 
         gradients = tape.gradient(rms, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+        trainrms = mean_rms / num_elements
         trainabs = mean_abs / num_elements
+        trainproc = mean_proc_abs / num_elements
         with tf.contrib.summary.always_record_summaries():
-            tf.contrib.summary.scalar(abs_name, trainabs, step=previous_steps)
+            tf.contrib.summary.scalar('train_{}/mean_RMS'.format(split_no), trainrms, step=previous_steps)
+            tf.contrib.summary.scalar('train_{}/mean_ABS'.format(split_no), trainabs, step=previous_steps)
+            tf.contrib.summary.scalar('train_{}/mean_proc_abs'.format(split_no), trainproc, step=previous_steps)
             writer.flush()
         previous_steps += 1
 
@@ -116,24 +125,6 @@ def do_regression(args):
         with open(args.data_path_unseen, "rb") as fp:
             unseen = pickle.load(fp)
 
-    # setup model
-    model = RNN(args.batch_size)
-
-    # add eta decay
-    eta = tf.contrib.eager.Variable(1e-3)
-    eta_value = tf.train.exponential_decay(
-        1e-3,
-        tf.train.get_or_create_global_step(),
-        args.epochs,
-        0.99)
-    eta.assign(eta_value())
-
-    # setup optimizer and metrics
-    optimizer = tf.keras.optimizers.Adam(eta)
-    ckpt = tf.train.Checkpoint(optimizer=optimizer,
-                               model=model,
-                               optimizer_step=tf.train.get_or_create_global_step())
-
     # start a cross validate training
     kf = KFold(n_splits=args.num_splits)
     train_dataset["data"] = np.asarray(
@@ -145,6 +136,24 @@ def do_regression(args):
         logs_path = os.path.join(args.results, '{}'.format(split_no))
         pickle_path = os.path.join(args.results, 'metrics_{}.pickle'.format(split_no, split_no))
         metrics = open(pickle_path, 'wb')
+
+        # setup model
+        model = RNN(args.batch_size)
+
+        # add eta decay
+        eta = tf.contrib.eager.Variable(1e-3)
+        eta_value = tf.train.exponential_decay(
+            1e-3,
+            tf.train.get_or_create_global_step(),
+            args.epochs,
+            0.99)
+        eta.assign(eta_value())
+
+        # setup optimizer and metrics
+        optimizer = tf.keras.optimizers.Adam(eta)
+        ckpt = tf.train.Checkpoint(optimizer=optimizer,
+                                   model=model,
+                                   optimizer_step=tf.train.get_or_create_global_step())
 
         # create tensorflow writers and checkpoint saver
         ckpt_man = tf.train.CheckpointManager(ckpt, logs_path, max_to_keep=3)
@@ -161,23 +170,19 @@ def do_regression(args):
                 .batch(args.batch_size)
 
         # start training // add metrics to tensorboard and save results for postprocessing
-        plot_name_training_abs = 'train_{}/abs'.format(split_no)
-        plot_name_validate_abs = 'val_{}/abs'.format(split_no)
-        plot_name_unseen_abs = 'unseen_{}/abs'.format(split_no)
         train_step, val_step, unseen_step = 0, 0, 0
         train_results, val_results, unseen_results = list(), list(), list()
         for epoch in tqdm(range(args.epochs)):
-            train_step, train_metrics = train(model, train_writer, train_ds, train_mean, train_std,
-                                              optimizer, plot_name_training_abs, train_step)
-            val_step, val_metrics = validate(model, val_writer, val_ds, train_mean, train_std,
-                                             plot_name_validate_abs, val_step)
+            train_step, train_metrics = train(model, train_writer, train_ds, train_mean, train_std, optimizer,
+                                              train_step, split_no)
+            val_step, val_metrics = validate(model, val_writer, val_ds, train_mean, train_std, val_step, split_no)
 
             # check the unseen dataset if needed and save to list
             train_results.append(train_metrics)
             val_results.append(val_metrics)
             if unseen is not None and unseen_ds is not None:
                 unseen_step, unseen_metrics = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
-                                                       plot_name_unseen_abs, unseen_step)
+                                                       unseen_step, split_no)
                 unseen_results.append(unseen_metrics)
 
             # assign eta and reset the metrics for the next epoch
@@ -207,7 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-unseen', type=str,
                         default="./data/dataset/ds_IMU_no_contact_sense_full/unseen.pickle")
     parser.add_argument('--results', type=str, default="./data/logs/cross_validated")
-    parser.add_argument('--epochs', type=int, default=300)
+    parser.add_argument('--epochs', type=int, default=2)
     parser.add_argument('--batch-size', type=int, default=256)
     parser.add_argument('--num-splits', type=int, default=5)
     args, _ = parser.parse_known_args()
