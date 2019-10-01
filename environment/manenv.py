@@ -7,7 +7,7 @@ class ManEnv(Env):
     # ADJUST VARIABLES DEPENDING ON YOUR DATASET
     # id of joints used to create an objects - they'll be randomized during experiments
     # joint_ids = list(range(34, 251))      # JOINT INDEXES FOR 4 FINGER GRIPPER
-    joint_ids = list(range(11, 102))        # JOINT INDEXES FOR 2 FINGER GRIPPER
+    joint_ids = list(range(11, 228))        # JOINT INDEXES FOR 2 FINGER GRIPPER
     tendon_ids = list(range(1))
 
     # list of bodies that are check for collision (partial names are enough)

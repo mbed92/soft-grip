@@ -1,6 +1,6 @@
 <mujoco model="soft experiments_softball">
-    <include file="soft_grip_four_fingers.xml"/>
-<!--    <include file="soft_grip_two_fingers.xml"/>-->
+<!--    <include file="soft_grip_four_fingers.xml"/>-->
+    <include file="soft_grip_two_fingers.xml"/>
 
     <!--BALL-->
     <worldbody>
