@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from create_dataset import NUM_EPISODES, MAX_ITER_PER_EP
 import pickle
 
-path = "./data/dataset/ds_IMU_with_contact_sense_full/unseen.pickle"
+path = "./data/dataset/ds_IMU_with_contact_sense_full_two_fingers/train_dataset.pickle"
 
 
 # def playground():
@@ -50,13 +50,13 @@ def playground():
         plt.subplot(7, 1, 4)
         plt.plot(mag[3], 'y')
 
-        # gyro
-        plt.subplot(7, 1, 5)
-        plt.plot(acc[:, 12], 'r')
-        plt.subplot(7, 1, 6)
-        plt.plot(acc[:, 13], 'g')
-        plt.subplot(7, 1, 7)
-        plt.plot(acc[:, 14], 'b')
+        # # gyro
+        # plt.subplot(7, 1, 5)
+        # plt.plot(acc[:, 12], 'r')
+        # plt.subplot(7, 1, 6)
+        # plt.plot(acc[:, 13], 'g')
+        # plt.subplot(7, 1, 7)
+        # plt.plot(acc[:, 14], 'b')
         plt.show()
         input("Press key to continue...")
 
