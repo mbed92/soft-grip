@@ -8,7 +8,7 @@
     <size nconmax="500" njmax="5000" nstack="5000000"/>
 
     <default>
-        <geom density="1" contype="1" conaffinity="1" rgba=".99 .99 .99 1" group="1"/>
+        <geom density="1" contype="1" conaffinity="1" rgba=".7 .7 .7 1" group="1"/>
         <joint limited="true"/>
         <site type="sphere" size="0.01"/>
         <tendon width="0.02"/>
@@ -35,10 +35,6 @@
         <default class="finger_right_util">
             <joint type="hinge" range="-0.17 0.78"/>
             <geom type="box" pos="0 -0.075 0" size="0.03 0.03 0.2" mass="0.05" contype="1" conaffinity="1"/>
-        </default>
-
-        <default class="finger_adduction">
-            <joint type="hinge" axis="0 1 0" stiffness="99" damping="999" limited="true" range="-0.1 0.1"/>
         </default>
 
         <default class="tinger_twist">
@@ -123,7 +119,7 @@
         <!-- ACTUATORS -->
         <actuator>
             <cylinder tendon="grip_l_12" area="300"/>
-            <cylinder tendon="grip_r_21"  area="300"/>
+            <cylinder tendon="grip_r_21" area="300"/>
         </actuator>
 
         <!-- SENSORS -->
