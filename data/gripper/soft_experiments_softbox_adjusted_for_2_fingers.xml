@@ -1,0 +1,17 @@
+<mujoco model="soft experiments_softbox">
+<!--    <include file="soft_grip_four_fingers.xml"/>-->
+    <include file="soft_grip_two_fingers.xml"/>
+
+    <!--SPONGE-->
+    <worldbody>
+        <body pos="1.4 -0.02 0.9">
+            <freejoint/>
+            <composite prefix="OBJ" type="box" count="3 6 6" spacing="0.33">
+<!--                <skin texcoord="true" material="matsponge"/>-->
+                <geom type="capsule" size=".15 0.2" rgba=".8 .2 .1 1" mass="0.003" contype="0" conaffinity="1"/>
+                <joint kind="main" stiffness="69" damping="1" solreffix="-0.02 -1"/>
+                <tendon kind="main" stiffness="69"  damping="1" solreffix="-0.02 -1"/>
+            </composite>
+        </body>
+    </worldbody>
+</mujoco>
