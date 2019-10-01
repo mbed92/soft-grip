@@ -4,12 +4,15 @@ import numpy as np
 
 
 class ManEnv(Env):
+    # ADJUST VARIABLES DEPENDING ON YOUR DATASET
     # id of joints used to create an objects - they'll be randomized during experiments
-    joint_ids = list(range(34, 251))
+    # joint_ids = list(range(34, 251))      # JOINT INDEXES FOR 4 FINGER GRIPPER
+    joint_ids = list(range(11, 228))        # JOINT INDEXES FOR 2 FINGER GRIPPER
     tendon_ids = list(range(1))
 
     # list of bodies that are check for collision (partial names are enough)
-    finger_names = ['g11', 'g12', 'g13', 'g2']
+    # finger_names = ['g11', 'g12', 'g13', 'g2']    # FINGER NAMES FOR 4 FINGER GRIPPER
+    finger_names = ['g12', 'g2']                    # FINGER NAMES FOR 2 FINGER GRIPPER
     obj_name = 'OBJ'
 
     def __init__(self, sim_start, sim_step, env_paths, is_vis=True):
@@ -88,11 +91,11 @@ class ManEnv(Env):
             self.is_closing = True
 
     def _close_hand(self):
-        for i in range(4):
-            self.env.data.ctrl[i] = -1.0
+        for i in range(2):
+            self.env.data.ctrl[i] = 1.0
 
     def _loose_hand(self):
-        for i in range(4):
+        for i in range(2):
             self.env.data.ctrl[i] = 0.0
 
     def set_new_stiffness(self, range_min=1e-1, range_max=10.0):
