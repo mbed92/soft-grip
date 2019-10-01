@@ -17,13 +17,13 @@
         <!-- All changes rearding joint dynamics, box sizes, etc. can be adjusted from here! Digging
         In XML is not advised/-->
         <default class="gripper_sticks_main">
-            <geom type="box" size="0.25 0.3 0.35" mass="0.1" contype="1" conaffinity="1"/>
+            <geom type="box" size="0.25 0.3 0.35" mass="0.05" contype="1" conaffinity="1"/>
         </default>
         <default class="gripper_sticks_middle">
-            <geom type="box" size="0.5 0.15 0.35" mass="0.1" contype="1" conaffinity="1"/>
+            <geom type="box" size="0.5 0.15 0.35" mass="0.05" contype="1" conaffinity="1"/>
         </default>
         <default class="gripper_sticks_end">
-            <geom type="box" size="0.4 0.15 0.35" mass="0.1" contype="1" conaffinity="1"/>
+            <geom type="box" size="0.4 0.15 0.35" mass="0.05" contype="1" conaffinity="1"/>
         </default>
 
         <!-- Looking from the behind -->
@@ -118,8 +118,8 @@
 
         <!-- ACTUATORS -->
         <actuator>
-            <cylinder tendon="grip_l_12" area="300"/>
-            <cylinder tendon="grip_r_21" area="300"/>
+            <cylinder tendon="grip_l_12" area="200" forcerange="0 10" forcelimited="true"/>
+            <cylinder tendon="grip_r_21" area="200" forcerange="0 10" forcelimited="true"/>
         </actuator>
 
         <!-- SENSORS -->
