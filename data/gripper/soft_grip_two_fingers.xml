@@ -63,16 +63,16 @@
                     <geom class="gripper_sticks_main" name="g121"/>
                     <geom class="finger_left_util"/>
                     <joint class="finger_left_util"/>
-                    <body pos="0.9 0.2 0">
+                    <body pos="0.8 0.1 0">
                         <geom class="gripper_sticks_middle" name="g122"/>
                         <joint class="finger_left_util"/>
                         <joint class="tinger_twist"/>
-                        <site name="s122" pos="0 0.3 0"/>
+                        <site name="s122" pos="-0.1 0.3 0"/>
                         <body pos="1.0 0 0">
                             <geom class="gripper_sticks_end" name="g123" quat="0.3 0 0 1"/>
                             <joint type="hinge" range="-0.2 0.0"/>
                             <joint class="tinger_twist"/>
-                            <site name="s123" pos="0 -0.3 0"/>
+                            <site name="s123" pos="0.1 -0.3 0"/>
                         </body>
                     </body>
                 </body>
@@ -84,16 +84,16 @@
                     <geom class="gripper_sticks_main" name="g21"/>
                     <geom class="finger_right_util"/>
                     <joint class="finger_right_util"/>
-                    <body pos="0.9 -0.2 0">
+                    <body pos="0.8 -0.1 0">
                         <geom class="gripper_sticks_middle" name="g22"/>
                         <joint class="tinger_twist"/>
                         <joint class="finger_right_util"/>
-                        <site name="s22" pos="0 -0.3 0"/>
+                        <site name="s22" pos="-0.1 -0.3 0"/>
                         <body pos="1.0 0 0">
                             <geom class="gripper_sticks_end" name="g23" quat="-0.3 0 0 1"/>
                             <joint type="hinge" range="0.0 0.2"/>
                             <joint class="tinger_twist"/>
-                            <site name="s23" pos="0 0.3 0"/>
+                            <site name="s23" pos="0.1 0.3 0"/>
                         </body>
                     </body>
                 </body>
@@ -118,17 +118,15 @@
 
         <!-- ACTUATORS -->
         <actuator>
-            <cylinder tendon="grip_l_12" area="200" forcerange="0 10" forcelimited="true"/>
-            <cylinder tendon="grip_r_21" area="200" forcerange="0 10" forcelimited="true"/>
+            <cylinder tendon="grip_l_12" area="5000"/>
+            <cylinder tendon="grip_r_21" area="5000"/>
         </actuator>
 
         <!-- SENSORS -->
         <sensor>
             <accelerometer name="a12_sensor" site="s123"/>
             <accelerometer name="a21_sensor" site="s23"/>
-
             <gyro name="g12_sensor" site="s123"/>
             <gyro name="g21_sensor" site="s23"/>
-
         </sensor>
 </mujoco>

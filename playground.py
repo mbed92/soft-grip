@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from create_dataset import NUM_EPISODES, MAX_ITER_PER_EP
 import pickle
 
-path = "./data/dataset/ds_IMU_with_contact_sense_full_two_fingers/train_dataset.pickle"
+path = "./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/train_dataset.pickle"
 
 
 # def playground():

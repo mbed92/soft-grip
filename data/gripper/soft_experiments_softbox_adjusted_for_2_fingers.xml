@@ -4,13 +4,13 @@
 
     <!--SPONGE-->
     <worldbody>
-        <body pos="1.4 -0.02 0.9">
+        <body pos="1.8 0 1.0">
             <freejoint/>
-            <composite prefix="OBJ" type="box" count="3 6 6" spacing="0.33">
+            <composite prefix="OBJ" type="box" count="6 4 7" spacing="0.32">
 <!--                <skin texcoord="true" material="matsponge"/>-->
-                <geom type="capsule" size=".15 0.2" rgba=".8 .2 .1 1" mass="0.003" contype="0" conaffinity="1"/>
-                <joint kind="main" stiffness="69" damping="1" solreffix="-0.02 -1"/>
-                <tendon kind="main" stiffness="69"  damping="1" solreffix="-0.02 -1"/>
+                <geom type="capsule" size=".15 0.2" rgba=".8 .2 .1 1" mass="0.05" contype="0" conaffinity="1"/>
+                <joint kind="main" stiffness="500" damping="300" solreffix="-0.02 -1"/>
+                <tendon kind="main" stiffness="500"  damping="300" solreffix="-0.02 -1"/>
             </composite>
         </body>
     </worldbody>

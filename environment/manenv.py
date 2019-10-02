@@ -85,20 +85,20 @@ class ManEnv(Env):
     def toggle_grip(self):
         if self.is_closing:
             self.is_closing = False
-            self._loose_hand()
+            self.loose_hand()
         else:
-            self._close_hand()
+            self.close_hand()
             self.is_closing = True
 
-    def _close_hand(self):
+    def close_hand(self):
         for i in range(2):
             self.env.data.ctrl[i] = 1.0
 
-    def _loose_hand(self):
+    def loose_hand(self):
         for i in range(2):
             self.env.data.ctrl[i] = 0.0
 
-    def set_new_stiffness(self, range_min=1e-2, range_max=2.0):
+    def set_new_stiffness(self, range_min=600, range_max=1200):
         new_value = np.random.uniform(range_min, range_max)
         for i in self.joint_ids:
             self.env.model.jnt_stiffness[i] = new_value

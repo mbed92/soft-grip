@@ -7,6 +7,7 @@ import tensorflow as tf
 import pickle, os
 from tqdm import tqdm
 from net import RNN
+from functions import train, validate
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -24,7 +25,7 @@ def do_regression(args):
         test_dataset = pickle.load(fp)
 
     unseen = None
-    if args.data_path_unseen is not None:
+    if args.data_path_unseen is not "":
         with open(args.data_path_unseen, "rb") as fp:
             unseen = pickle.load(fp)
 
@@ -39,7 +40,7 @@ def do_regression(args):
 
     unseen_ds = None
     if unseen is not None:
-        unseen_ds = tf.data.Dataset.from_tensor_slices((unseen["data"], unseen["stiffness"]))\
+        unseen_ds = tf.data.Dataset.from_tensor_slices((unseen["data"], unseen["stiffness"])) \
             .batch(args.batch_size)
 
     # create tensorflow writers
@@ -50,7 +51,6 @@ def do_regression(args):
 
     # setup model
     model = RNN(args.batch_size)
-    regularizer = tf.keras.regularizers.l2(1e-5)
 
     # add eta decay
     eta = tf.contrib.eager.Variable(1e-3)
@@ -62,70 +62,30 @@ def do_regression(args):
     eta.assign(eta_value())
 
     optimizer = tf.keras.optimizers.Adam(eta)
-    train_loss = tf.keras.metrics.Mean(name='train_loss')
-    test_loss = tf.keras.metrics.Mean(name='test_loss')
     ckpt = tf.train.Checkpoint(optimizer=optimizer,
                                model=model,
                                optimizer_step=tf.train.get_or_create_global_step())
     ckpt_man = tf.train.CheckpointManager(ckpt, args.results, max_to_keep=3)
+    if args.restore_dir is not "":
+        path = tf.train.latest_checkpoint(args.restore_dir)
+        ckpt.restore(path)
 
     # start training
-    n, k = 0, 0
+    n, k, u = 0, 0, 0
     for epoch in tqdm(range(args.epochs)):
         train_writer.set_as_default()
-        for x_train, y_train in train_ds:
-            with tf.GradientTape() as tape:
-                predictions = model((x_train - train_mean) / train_std, training=True)
-                rms = tf.losses.mean_squared_error(y_train, predictions, reduction=tf.losses.Reduction.NONE)
-                reg = tf.contrib.layers.apply_regularization(regularizer, model.trainable_variables)
-                total = tf.reduce_mean(rms) + reg
-
-            gradients = tape.gradient(total, model.trainable_variables)
-            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-            train_loss(rms)
-            with tf.contrib.summary.always_record_summaries():
-                tf.contrib.summary.scalar('train/loss', tf.reduce_mean(rms), step=n)
-                tf.contrib.summary.scalar('train/absolute', tf.sqrt(tf.reduce_mean(rms)), step=n)
-                train_writer.flush()
-            n += 1
+        train(model, train_writer, train_ds, train_mean, train_std, optimizer, n)
 
         # validate after each epoch
         test_writer.set_as_default()
-        test_rms = list()
-        for x_test, y_test in test_ds:
-            predictions = model((x_test - train_mean) / train_std, training=False)
-            rms = tf.losses.mean_squared_error(y_test, predictions, reduction=tf.losses.Reduction.NONE)
-            test_loss(rms)
-            test_rms.append(rms)
-
-        test_rms = tf.reduce_mean(tf.concat(test_rms, 0))
-        with tf.contrib.summary.always_record_summaries():
-            tf.contrib.summary.scalar('test/loss', test_rms, step=k)
-            tf.contrib.summary.scalar('test/absolute', tf.sqrt(test_rms), step=k)
-            test_writer.flush()
-        k += 1
+        validate(model, test_writer, test_ds, train_mean, train_std, k)
 
         # check the unseen dataset
-        unseen_rms = None
         if unseen is not None and unseen_ds is not None:
-            rms_list = list()
-            for x, y in unseen_ds:
-                predictions = model((x - train_mean) / train_std, training=False)
-                rms = tf.losses.mean_squared_error(y, predictions, reduction=tf.losses.Reduction.NONE)
-                rms_list.append(rms)
-            unseen_rms = tf.reduce_mean(tf.concat(rms_list, 0))
-
-        if unseen_rms is not None:
-            template = 'Epoch {}\tTest ABSRMS: {}, Unseen ABSRMS: {}'
-            print(template.format(epoch + 1, tf.sqrt(test_rms), tf.sqrt(unseen_rms)))
-        else:
-            template = 'Epoch {}\tTest ABSRMS: {}'
-            print(template.format(epoch + 1, tf.sqrt(test_rms)))
+            validate(model, test_writer, unseen_ds, train_mean, train_std, u)
 
         # assign eta and reset the metrics for the next epoch
         eta.assign(eta_value())
-        train_loss.reset_states()
-        test_loss.reset_states()
 
         # save each 10 epochs
         if epoch % 10 == 0:
@@ -134,10 +94,13 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full/train_dataset.pickle")
-    parser.add_argument('--data-path-test', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full/test_dataset.pickle")
-    parser.add_argument('--data-path-unseen', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full/unseen.pickle")
+    parser.add_argument('--data-path-train', type=str,
+                        default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/train_dataset.pickle")
+    parser.add_argument('--data-path-test', type=str,
+                        default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/test_dataset.pickle")
+    parser.add_argument('--data-path-unseen', type=str, default="")
     parser.add_argument('--results', type=str, default="./data/logs")
+    parser.add_argument('--restore-dir', type=str, default="./data/logs/cross_validated")
     parser.add_argument('--epochs', type=int, default=9999)
     parser.add_argument('--batch-size', type=int, default=128)
     args, _ = parser.parse_known_args()

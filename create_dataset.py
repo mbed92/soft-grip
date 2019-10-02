@@ -9,9 +9,9 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 5000
+NUM_EPISODES = 1500
 MAX_ITER_PER_EP = 100
-OPEN_CLOSE_DIV = 40
+OPEN_CLOSE_DIV = 50
 
 
 def log_into_file(args):
@@ -29,6 +29,7 @@ def log_into_file(args):
 
     for ep in tqdm(range(NUM_EPISODES * num_envs)):
         current_stiffness = env.reset()
+        env.close_hand()
         # print(current_stiffness)
 
         # start squeezing an object
@@ -74,8 +75,8 @@ if __name__ == '__main__':
     parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--mask-contact', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
-    parser.add_argument('--data-folder', type=str, default="./data/dataset/ds_IMU_with_contact_sense_full_two_fingers_v1")
-    parser.add_argument('--data-name', type=str, default="train_dataset")
+    parser.add_argument('--data-folder', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1")
+    parser.add_argument('--data-name', type=str, default="test_dataset")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)
