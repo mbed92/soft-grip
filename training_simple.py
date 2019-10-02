@@ -70,19 +70,26 @@ def do_regression(args):
         path = tf.train.latest_checkpoint(args.restore_dir)
         ckpt.restore(path)
 
+    pickle_path = os.path.join(args.results, 'metrics.pickle')
+    metrics = open(pickle_path, 'wb')
+
     # start training
     n, k, u = 0, 0, 0
+    train_results, val_results, unseen_results = list(), list(), list()
     for epoch in tqdm(range(args.epochs)):
         train_writer.set_as_default()
-        train(model, train_writer, train_ds, train_mean, train_std, optimizer, n)
+        n, t_results = train(model, train_writer, train_ds, train_mean, train_std, optimizer, n)
+        train_results.append(t_results)
 
         # validate after each epoch
         test_writer.set_as_default()
-        validate(model, test_writer, test_ds, train_mean, train_std, k)
+        k, v_results = validate(model, test_writer, test_ds, train_mean, train_std, k)
+        val_results.append(v_results)
 
         # check the unseen dataset
         if unseen is not None and unseen_ds is not None:
-            validate(model, test_writer, unseen_ds, train_mean, train_std, u)
+            u, u_results = validate(model, test_writer, unseen_ds, train_mean, train_std, u)
+            unseen_results.append(u_results)
 
         # assign eta and reset the metrics for the next epoch
         eta.assign(eta_value())
@@ -91,17 +98,25 @@ def do_regression(args):
         if epoch % 10 == 0:
             ckpt_man.save()
 
+    # dump data to the pickle
+    obj = {
+        "training_results": train_results,
+        "validation_results": val_results
+    }
+    if unseen_ds is not None:
+        obj['unseen_results'] = unseen_results
+    pickle.dump(obj, metrics)
+    metrics.close()
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str,
-                        default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/train_dataset.pickle")
-    parser.add_argument('--data-path-test', type=str,
-                        default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/test_dataset.pickle")
+    parser.add_argument('--data-path-train', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/train_dataset.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/test_dataset.pickle")
     parser.add_argument('--data-path-unseen', type=str, default="")
     parser.add_argument('--results', type=str, default="./data/logs")
     parser.add_argument('--restore-dir', type=str, default="./data/logs/cross_validated")
-    parser.add_argument('--epochs', type=int, default=9999)
+    parser.add_argument('--epochs', type=int, default=350)
     parser.add_argument('--batch-size', type=int, default=128)
     args, _ = parser.parse_known_args()
     do_regression(args)
