@@ -2,17 +2,19 @@ from .interface import Env
 import mujoco_py
 import numpy as np
 
+DEFAULT_DAMPING = -200
+
 
 class ManEnv(Env):
     # ADJUST VARIABLES DEPENDING ON YOUR DATASET
     # id of joints used to create an objects - they'll be randomized during experiments
     # joint_ids = list(range(34, 251))      # JOINT INDEXES FOR 4 FINGER GRIPPER
-    joint_ids = list(range(11, 64))        # JOINT INDEXES FOR 2 FINGER GRIPPER
+    joint_ids = list(range(11, 64))  # JOINT INDEXES FOR 2 FINGER GRIPPER
     tendon_ids = list(range(1))
 
     # list of bodies that are check for collision (partial names are enough)
     # finger_names = ['g11', 'g12', 'g13', 'g2']    # FINGER NAMES FOR 4 FINGER GRIPPER
-    finger_names = ['g12', 'g2']                    # FINGER NAMES FOR 2 FINGER GRIPPER
+    finger_names = ['g12', 'g2']  # FINGER NAMES FOR 2 FINGER GRIPPER
     obj_name = 'OBJ'
 
     def __init__(self, sim_start, sim_step, env_paths, is_vis=True):
@@ -92,19 +94,18 @@ class ManEnv(Env):
 
     def close_hand(self):
         for i in range(2):
-            self.env.data.ctrl[i] = -0.7
+            self.env.data.ctrl[i] = -1.0
 
     def loose_hand(self):
         for i in range(2):
             self.env.data.ctrl[i] = 0.3
 
-    def set_new_stiffness(self, range_min=700, range_max=1200):
+    def set_new_stiffness(self, range_min=-700, range_max=-1200):
         new_value = np.random.uniform(range_min, range_max)
-        joints = self.env.model.jnt_stiffness
         for i in self.joint_ids:
-            self.env.model.jnt_stiffness[i] = new_value
-        for i in self.tendon_ids:
-            self.env.model.tendon_stiffness[i] = new_value
+            # self.env.model.jnt_stiffness[i] = new_value
+            self.env.model.jnt_solref[i, 0] = new_value
+            self.env.model.jnt_solref[i, 1] = DEFAULT_DAMPING
         return new_value
 
     def get_env(self):

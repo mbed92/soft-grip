@@ -8,13 +8,13 @@
 
     <!--SPONGE-->
     <worldbody>
-        <body pos="1.7 0 1.0">
-            <freejoint/>
+        <body pos="1.7 0 0.9">
+<!--            <freejoint/>-->
             <composite prefix="OBJ" type="box" count="4 5 7" spacing="0.3">
                 <!--                <skin texcoord="true" material="matsponge"/>-->
                 <geom type="capsule" size=".2 0.2" rgba=".8 .2 .1 1" mass="0.00015" contype="0" conaffinity="1"/>
-                <joint kind="main" solimpfix="0.9 0.95 0.0001 0.5 2" solreffix="-1000 -100"/>
-                <tendon kind="main" solimpfix="0.9 0.95 0.0001 0.5 2" solreffix="-1000 -100"/>
+                <joint kind="main" solimpfix="0.8 0.9 0.001 0.5 6" solreffix="-700 -100"/>
+                <tendon kind="main" solreffix="-0.5 -10"/>
             </composite>
         </body>
     </worldbody>
