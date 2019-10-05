@@ -38,7 +38,7 @@ def log_into_file(args):
             env.render()
 
             # perform squeezing or loose a hand
-            if i % OPEN_CLOSE_DIV == 0:
+            if i % OPEN_CLOSE_DIV == 0 and i > 0:
                 env.toggle_grip()
 
             # gather readings and mask out data when there is no contact
@@ -54,7 +54,7 @@ def log_into_file(args):
         stiffness.append(current_stiffness)
 
         # change env number
-        if (ep + 1) % NUM_EPISODES == 0:
+        if (ep + 1) % NUM_EPISODES == 0 and num_envs > 1:
             current_env += 1
             if current_env > num_envs:
                 current_env = 0
@@ -71,7 +71,7 @@ def log_into_file(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--sim-step', type=int, default=10)
+    parser.add_argument('--sim-step', type=int, default=20)
     parser.add_argument('--vis', type=bool, default=True)
     parser.add_argument('--mask-contact', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
