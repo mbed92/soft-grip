@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-test', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/test_dataset.pickle")
     parser.add_argument('--data-path-unseen', type=str, default="")
     parser.add_argument('--results', type=str, default="./data/logs")
-    parser.add_argument('--restore-dir', type=str, default="./data/logs/cross_validated")
+    parser.add_argument('--restore-dir', type=str, default="")
     parser.add_argument('--epochs', type=int, default=350)
     parser.add_argument('--batch-size', type=int, default=128)
     args, _ = parser.parse_known_args()

@@ -1,16 +1,20 @@
 <mujoco model="soft experiments_softbox">
-<!--    <include file="soft_grip_four_fingers.xml"/>-->
+    <!--    <include file="soft_grip_four_fingers.xml"/>-->
     <include file="soft_grip_two_fingers.xml"/>
+
+    <default>
+        <geom friction=".4 .1 .1" />
+    </default>
 
     <!--SPONGE-->
     <worldbody>
-        <body pos="1.8 0 1.0">
+        <body pos="1.7 0 1.0">
             <freejoint/>
-            <composite prefix="OBJ" type="box" count="6 4 7" spacing="0.32">
-<!--                <skin texcoord="true" material="matsponge"/>-->
-                <geom type="capsule" size=".15 0.2" rgba=".8 .2 .1 1" mass="0.05" contype="0" conaffinity="1"/>
-                <joint kind="main" stiffness="500" damping="300" solreffix="-0.02 -1"/>
-                <tendon kind="main" stiffness="500"  damping="300" solreffix="-0.02 -1"/>
+            <composite prefix="OBJ" type="box" count="4 5 7" spacing="0.3">
+                <!--                <skin texcoord="true" material="matsponge"/>-->
+                <geom type="capsule" size=".2 0.2" rgba=".8 .2 .1 1" mass="0.00015" contype="0" conaffinity="1"/>
+                <joint kind="main" solimpfix="0.9 0.95 0.0001 0.5 2" solreffix="-1000 -100"/>
+                <tendon kind="main" solimpfix="0.9 0.95 0.0001 0.5 2" solreffix="-1000 -100"/>
             </composite>
         </body>
     </worldbody>

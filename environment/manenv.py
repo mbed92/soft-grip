@@ -7,7 +7,7 @@ class ManEnv(Env):
     # ADJUST VARIABLES DEPENDING ON YOUR DATASET
     # id of joints used to create an objects - they'll be randomized during experiments
     # joint_ids = list(range(34, 251))      # JOINT INDEXES FOR 4 FINGER GRIPPER
-    joint_ids = list(range(11, 102))        # JOINT INDEXES FOR 2 FINGER GRIPPER
+    joint_ids = list(range(11, 64))        # JOINT INDEXES FOR 2 FINGER GRIPPER
     tendon_ids = list(range(1))
 
     # list of bodies that are check for collision (partial names are enough)
@@ -92,14 +92,15 @@ class ManEnv(Env):
 
     def close_hand(self):
         for i in range(2):
-            self.env.data.ctrl[i] = 1.0
+            self.env.data.ctrl[i] = -0.7
 
     def loose_hand(self):
         for i in range(2):
-            self.env.data.ctrl[i] = 0.0
+            self.env.data.ctrl[i] = 0.3
 
-    def set_new_stiffness(self, range_min=600, range_max=1200):
+    def set_new_stiffness(self, range_min=700, range_max=1200):
         new_value = np.random.uniform(range_min, range_max)
+        joints = self.env.model.jnt_stiffness
         for i in self.joint_ids:
             self.env.model.jnt_stiffness[i] = new_value
         for i in self.tendon_ids:

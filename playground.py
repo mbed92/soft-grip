@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from create_dataset import NUM_EPISODES, MAX_ITER_PER_EP
 import pickle
 
-path = "./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/train_dataset.pickle"
+path = "./data/dataset/test/test_dataset.pickle"
 
 
 # def playground():
@@ -34,20 +34,20 @@ def playground():
 
     for acc in data["data"]:
 
-        mag1 = acc[:, 0] ** 2 + acc[:, 1] ** 2 + acc[:, 2] ** 2
-        mag2 = acc[:, 3] ** 2 + acc[:, 4] ** 2 + acc[:, 5] ** 2
-        mag3 = acc[:, 6] ** 2 + acc[:, 7] ** 2 + acc[:, 8] ** 2
-        mag4 = acc[:, 9] ** 2 + acc[:, 10] ** 2 + acc[:, 11] ** 2
-        mag = [mag1, mag2, mag3, mag4]
+        acc1 = np.sqrt(acc[:, 0] ** 2 + acc[:, 1] ** 2 + acc[:, 2] ** 2)
+        acc2 = np.sqrt(acc[:, 3] ** 2 + acc[:, 4] ** 2 + acc[:, 5] ** 2)
+        gyr1 = np.sqrt(acc[:, 6] ** 2 + acc[:, 7] ** 2 + acc[:, 8] ** 2)
+        gyr2 = np.sqrt(acc[:, 9] ** 2 + acc[:, 10] ** 2 + acc[:, 11] ** 2)
+        mag = [acc1, acc2, gyr1, gyr2]
 
         # acc
-        plt.subplot(7, 1, 1)
+        plt.subplot(4, 1, 1)
         plt.plot(mag[0], 'r')
-        plt.subplot(7, 1, 2)
+        plt.subplot(4, 1, 2)
         plt.plot(mag[1], 'g')
-        plt.subplot(7, 1, 3)
+        plt.subplot(4, 1, 3)
         plt.plot(mag[2], 'b')
-        plt.subplot(7, 1, 4)
+        plt.subplot(4, 1, 4)
         plt.plot(mag[3], 'y')
 
         # # gyro
