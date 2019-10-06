@@ -32,7 +32,7 @@ def playground():
     with open(path, "rb") as fp:
         data = pickle.load(fp)
 
-    for acc in data["data"]:
+    for acc, stif in zip(data["data"], data["stiffness"]):
 
         acc1 = np.sqrt(acc[:, 0] ** 2 + acc[:, 1] ** 2 + acc[:, 2] ** 2)
         acc2 = np.sqrt(acc[:, 3] ** 2 + acc[:, 4] ** 2 + acc[:, 5] ** 2)
@@ -58,7 +58,7 @@ def playground():
         # plt.subplot(7, 1, 7)
         # plt.plot(acc[:, 14], 'b')
         plt.show()
-        input("Press key to continue...")
+        input(stif)
 
 
 if __name__ == '__main__':

@@ -9,9 +9,9 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 10
-MAX_ITER_PER_EP = 100
-OPEN_CLOSE_DIV = 50
+NUM_EPISODES = 100
+MAX_ITER_PER_EP = 200
+OPEN_CLOSE_DIV = 100
 
 
 def log_into_file(args):
@@ -29,6 +29,7 @@ def log_into_file(args):
 
     for ep in tqdm(range(NUM_EPISODES * num_envs)):
         current_stiffness = env.reset()
+        env.step(4)
         env.close_hand()
         # print(current_stiffness)
 
@@ -71,12 +72,12 @@ def log_into_file(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--sim-step', type=int, default=20)
-    parser.add_argument('--vis', type=bool, default=True)
+    parser.add_argument('--sim-step', type=int, default=7)
+    parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--mask-contact', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset/test")
-    parser.add_argument('--data-name', type=str, default="test_dataset")
+    parser.add_argument('--data-name', type=str, default="train_dataset")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)

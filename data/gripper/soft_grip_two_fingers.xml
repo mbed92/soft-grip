@@ -28,15 +28,15 @@
 
         <!-- Looking from the behind -->
         <default class="finger_left_util">
-            <joint type="hinge" range="-0.1 0.1" />
+            <joint type="hinge" range="-0.5 0.1" />
         </default>
 
         <default class="finger_right_util">
-            <joint type="hinge" range="-0.1 0.1" />
+            <joint type="hinge" range="-0.1 0.5" />
         </default>
 
         <default class="tinger_twist">
-            <joint type="hinge" axis="1 0 0" limited="true" range="-0.1 0.1"/>
+            <joint type="hinge" axis="1 0 0" limited="true" range="-0.001 0.001"/>
         </default>
 
         <default class="base">
@@ -64,12 +64,12 @@
                         <joint class="finger_left_util"/>
                         <joint class="tinger_twist"/>
                         <site name="s122" pos="0.2 -0.2 0"/>
+                        <site name="sensor1" pos="0.45 0.2 0"/>
                         <body pos="1.0 0 0">
                             <geom class="gripper_sticks_end" name="g123" quat="0.2 0 0 1"/>
-                            <joint type="hinge" range="-0.3 0.3"/>
+                            <joint type="hinge" range="-0.02 0.02"/>
                             <joint class="tinger_twist"/>
                             <site name="s123" pos="-0.7 -0.2 0"/>
-                            <site name="sensor1" pos="0.1 0.2 0"/>
                         </body>
                     </body>
                 </body>
@@ -84,12 +84,12 @@
                         <joint class="tinger_twist"/>
                         <joint class="finger_right_util"/>
                         <site name="s22" pos="0.2 0.2 0"/>
+                        <site name="sensor2" pos="0.45 -0.2 0"/>
                         <body pos="1.0 0 0">
                             <geom class="gripper_sticks_end" name="g23" quat="-0.3 0 0 1"/>
-                            <joint type="hinge" range="-0.3 0.3"/>
+                            <joint type="hinge" range="-0.02 0.02"/>
                             <joint class="tinger_twist"/>
                             <site name="s23" pos="-0.7 0.2 0"/>
-                            <site name="sensor2" pos="0.1 -0.2 0"/>
                         </body>
                     </body>
                 </body>
@@ -114,8 +114,8 @@
 
         <!-- ACTUATORS -->
         <actuator>
-            <cylinder tendon="grip_l_12" area="5000"/>
-            <cylinder tendon="grip_r_21" area="5000" />
+            <cylinder tendon="grip_l_12" area="2000"/>
+            <cylinder tendon="grip_r_21" area="2000" />
         </actuator>
 
         <!-- SENSORS -->

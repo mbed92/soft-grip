@@ -10,7 +10,7 @@
 
     <statistic extent="2" meansize=".05"/>
 
-    <option timestep="0.005" solver="Newton" iterations="30" tolerance="1e-10" jacobian="sparse" cone="pyramidal"/>
+    <option timestep="0.005" solver="PGS" iterations="30" tolerance="1e-7" cone="elliptic"/>
 
     <visual>
         <rgba haze="0.35 0.45 0.55 1"/>

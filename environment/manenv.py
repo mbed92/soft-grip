@@ -92,12 +92,12 @@ class ManEnv(Env):
 
     def close_hand(self):
         for i in range(2):
-            self.env.data.ctrl[i] = -1.0
+            self.env.data.ctrl[i] = -1
         self.is_closing = True
 
     def loose_hand(self):
         for i in range(2):
-            self.env.data.ctrl[i] = 0.1
+            self.env.data.ctrl[i] = 1
         self.is_closing = False
 
     def set_new_stiffness(self, range_min=600, range_max=1200):
