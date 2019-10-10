@@ -9,9 +9,10 @@ import os
 from tqdm import tqdm
 import pickle
 
-NUM_EPISODES = 100
-MAX_ITER_PER_EP = 200
-OPEN_CLOSE_DIV = 100
+NUM_EPISODES = 500
+MAX_ITER_PER_EP = 160
+OPEN_CLOSE_DIV = 80
+START_STEP = 40
 
 
 def log_into_file(args):
@@ -29,12 +30,18 @@ def log_into_file(args):
 
     for ep in tqdm(range(NUM_EPISODES * num_envs)):
         current_stiffness = env.reset()
-        env.step(4)
-        env.close_hand()
         # print(current_stiffness)
 
         # start squeezing an object
         samples = list()
+
+        for _ in range(START_STEP):
+            readings, contact = env.step()
+            if args.mask_contact and not contact:
+                readings = np.zeros_like(readings)
+            if readings is not None:
+                samples.append(readings)
+        env.close_hand()
         for i in range(MAX_ITER_PER_EP):
             env.render()
 
@@ -76,8 +83,8 @@ if __name__ == '__main__':
     parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--mask-contact', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
-    parser.add_argument('--data-folder', type=str, default="./data/dataset/test")
-    parser.add_argument('--data-name', type=str, default="train_dataset")
+    parser.add_argument('--data-folder', type=str, default="./data/dataset/final_ds/sim")
+    parser.add_argument('--data-name', type=str, default="sim_test")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)

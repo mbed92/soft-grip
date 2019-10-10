@@ -26,7 +26,7 @@ def do_regression(args):
         train_std = np.std(train_dataset["data"], axis=(0, 1), keepdims=True)
 
     unseen = None
-    if args.data_path_unseen is not None:
+    if args.data_path_unseen is not "":
         with open(args.data_path_unseen, "rb") as fp:
             unseen = pickle.load(fp)
 
@@ -111,14 +111,14 @@ def do_regression(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data-path-train', type=str,
-                        default="./data/dataset/ds_IMU_no_contact_sense_full/train_dataset.pickle")
+                        default="./data/dataset/final_ds/mix/mix_ds_train.pickle")
     parser.add_argument('--data-path-test', type=str,
-                        default="./data/dataset/ds_IMU_no_contact_sense_full/test_dataset.pickle")
+                        default="./data/dataset/final_ds/mix/mix_ds_test.pickle")
     parser.add_argument('--data-path-unseen', type=str,
-                        default="./data/dataset/ds_IMU_no_contact_sense_full/unseen.pickle")
-    parser.add_argument('--results', type=str, default="./data/logs/cross_validated")
-    parser.add_argument('--epochs', type=int, default=1000)
+                        default="./data/dataset/final_ds/mix/mix_ds_test.pickle")
+    parser.add_argument('--results', type=str, default="./data/logs/cross_validate_train_mix_test_real")
+    parser.add_argument('--epochs', type=int, default=3000)
     parser.add_argument('--batch-size', type=int, default=512)
-    parser.add_argument('--num-splits', type=int, default=5)
+    parser.add_argument('--num-splits', type=int, default=4)
     args, _ = parser.parse_known_args()
     do_regression(args)

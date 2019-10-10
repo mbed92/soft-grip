@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from create_dataset import NUM_EPISODES, MAX_ITER_PER_EP
 import pickle
 
-path = "./data/dataset/test/test_dataset.pickle"
+path = "./data/dataset/final_ds/mix/mix_ds_train.pickle"
 
 
 # def playground():

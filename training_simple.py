@@ -111,8 +111,8 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/train_dataset.pickle")
-    parser.add_argument('--data-path-test', type=str, default="./data/dataset/ds_IMU_no_contact_sense_full_two_fingers_v1/test_dataset.pickle")
+    parser.add_argument('--data-path-train', type=str, default="./data/dataset/sim_real/train_sim_real.pickle")
+    parser.add_argument('--data-path-test', type=str, default="./data/dataset/sim_real/test_sim_real.pickle")
     parser.add_argument('--data-path-unseen', type=str, default="")
     parser.add_argument('--results', type=str, default="./data/logs")
     parser.add_argument('--restore-dir', type=str, default="")

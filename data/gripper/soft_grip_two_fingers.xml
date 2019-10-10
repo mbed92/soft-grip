@@ -9,7 +9,7 @@
 
     <default>
         <geom density="1" contype="1" conaffinity="1" rgba=".7 .7 .7 1" group="1"/>
-        <joint limited="true" damping="100"/>
+<!--        <joint limited="true" damping="1"/>-->
         <site type="sphere" size="0.01"/>
         <tendon width="0.02"/>
 
@@ -28,15 +28,15 @@
 
         <!-- Looking from the behind -->
         <default class="finger_left_util">
-            <joint type="hinge" range="-0.5 0.1" />
+            <joint type="hinge" range="-0.5 0.1" limited="true"/>
         </default>
 
         <default class="finger_right_util">
-            <joint type="hinge" range="-0.1 0.5" />
+            <joint type="hinge" range="-0.1 0.5"  limited="true"/>
         </default>
 
         <default class="tinger_twist">
-            <joint type="hinge" axis="1 0 0" limited="true" range="-0.001 0.001"/>
+            <joint type="hinge" axis="1 0 0" limited="true" range="-0.01 0.01"/>
         </default>
 
         <default class="base">
@@ -64,12 +64,11 @@
                         <joint class="finger_left_util"/>
                         <joint class="tinger_twist"/>
                         <site name="s122" pos="0.2 -0.2 0"/>
-                        <site name="sensor1" pos="0.45 0.2 0"/>
                         <body pos="1.0 0 0">
                             <geom class="gripper_sticks_end" name="g123" quat="0.2 0 0 1"/>
-                            <joint type="hinge" range="-0.02 0.02"/>
+                            <joint type="hinge" range="-0.02 0.4"  limited="true"/>
                             <joint class="tinger_twist"/>
-                            <site name="s123" pos="-0.7 -0.2 0"/>
+                            <site name="sensor1" pos="-0.45 0.2 0"/>
                         </body>
                     </body>
                 </body>
@@ -84,12 +83,11 @@
                         <joint class="tinger_twist"/>
                         <joint class="finger_right_util"/>
                         <site name="s22" pos="0.2 0.2 0"/>
-                        <site name="sensor2" pos="0.45 -0.2 0"/>
                         <body pos="1.0 0 0">
                             <geom class="gripper_sticks_end" name="g23" quat="-0.3 0 0 1"/>
-                            <joint type="hinge" range="-0.02 0.02"/>
+                            <joint type="hinge" range="-0.4 0.02"  limited="true"/>
                             <joint class="tinger_twist"/>
-                            <site name="s23" pos="-0.7 0.2 0"/>
+                            <site name="sensor2" pos="-0.45 -0.2 0"/>
                         </body>
                     </body>
                 </body>
@@ -102,20 +100,18 @@
             <spatial name="grip_l_12" width="0.002" rgba=".95 .3 .3 1">
                 <site site="sBase"/>
                 <site site="s122"/>
-                <site site="s123"/>
             </spatial>
 
             <spatial name="grip_r_21" width="0.002" rgba=".95 .3 .3 1">
                 <site site="sBase"/>
                 <site site="s22"/>
-                <site site="s23"/>
             </spatial>
         </tendon>
 
         <!-- ACTUATORS -->
         <actuator>
-            <cylinder tendon="grip_l_12" area="2000"/>
-            <cylinder tendon="grip_r_21" area="2000" />
+            <cylinder tendon="grip_l_12" area="1000"/>
+            <cylinder tendon="grip_r_21" area="1000" />
         </actuator>
 
         <!-- SENSORS -->

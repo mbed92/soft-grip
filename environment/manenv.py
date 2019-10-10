@@ -92,15 +92,15 @@ class ManEnv(Env):
 
     def close_hand(self):
         for i in range(2):
-            self.env.data.ctrl[i] = -1
+            self.env.data.ctrl[i] = -0.2
         self.is_closing = True
 
     def loose_hand(self):
         for i in range(2):
-            self.env.data.ctrl[i] = 1
+            self.env.data.ctrl[i] = 0.2
         self.is_closing = False
 
-    def set_new_stiffness(self, range_min=600, range_max=1200):
+    def set_new_stiffness(self, range_min=300, range_max=1400):
         new_value = np.random.uniform(range_min, range_max)
         for i in self.joint_ids:
             self.env.model.jnt_stiffness[i] = new_value
