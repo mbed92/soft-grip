@@ -11,18 +11,22 @@ from sklearn.model_selection import KFold
 from tqdm import tqdm
 
 from functions import *
-from net import RNN
+from net import SignalNet
 
 
 def do_regression(args):
     os.makedirs(args.results, exist_ok=True)
 
-    # load datasets
+    # load & crop data
+    start_idx = 25
+    stop_idx = 175
     with open(args.data_path_train, "rb") as fp:
         train_dataset = pickle.load(fp)
+        train_dataset["data"] = train_dataset["data"][:, start_idx:stop_idx, :]
 
     with open(args.data_path_validation, "rb") as fp:
         validation_dataset = pickle.load(fp)
+        validation_dataset["data"] = validation_dataset["data"][:, start_idx:stop_idx, :]
 
     with open(args.data_path_unseen, "rb") as fp:
         unseen_dataset = pickle.load(fp)
@@ -49,11 +53,11 @@ def do_regression(args):
         print("... saved.")
 
         # setup model
-        model = RNN(args.batch_size)
+        model = SignalNet(args.batch_size)
 
         # setup optimization procedure
         eta = tf.Variable(args.lr)
-        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 2000, 0.99)
+        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 1000, 0.98)
         eta.assign(eta_value(0))
         optimizer = tf.keras.optimizers.Adam(eta)
         ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)
@@ -66,12 +70,13 @@ def do_regression(args):
 
         # setup writers
         os.makedirs(logs_path, exist_ok=True)
-        train_writer = tf.summary.create_file_writer(logs_path)
-        val_writer = tf.summary.create_file_writer(logs_path)
-        unseen_writer = tf.summary.create_file_writer(logs_path)
+        train_writer = tf.summary.create_file_writer(logs_path + "/train")
+        val_writer = tf.summary.create_file_writer(logs_path + "/val")
+        unseen_writer = tf.summary.create_file_writer(logs_path + "/test")
 
         # create split datasets to tf generators
-        train_ds, val_ds, unseen_ds = create_tf_generators(total_dataset, unseen_dataset, train_idx, val_idx, args.batch_size)
+        train_ds, val_ds, unseen_ds = create_tf_generators(total_dataset, unseen_dataset, train_idx, val_idx,
+                                                           args.batch_size)
 
         # start training
         train_step, val_step, unseen_step = 0, 0, 0
@@ -80,7 +85,7 @@ def do_regression(args):
             train_step = train(model, train_writer, train_ds, train_mean, train_std, optimizer, train_step)
             val_step = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
             unseen_step = validate(model, unseen_writer, unseen_ds, train_mean, train_std, unseen_step,
-                                                   prefix="unseen")
+                                   prefix="unseen")
 
             # assign eta
             eta.assign(eta_value(0))
@@ -99,10 +104,10 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-unseen', type=str,
                         default="./data/dataset/final_ds/mix/mix_ds_test.pickle")
     parser.add_argument('--results', type=str, default="./data/logs/train_mix_test_real")
-    parser.add_argument('--epochs', type=int, default=3500)
-    parser.add_argument('--batch-size', type=int, default=512)
+    parser.add_argument('--epochs', type=int, default=250)
+    parser.add_argument('--batch-size', type=int, default=500)
     parser.add_argument('--num-splits', type=int, default=4)
-    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float, default=1e-2)
     parser.add_argument('--restore', default=False, action='store_true')
     args, _ = parser.parse_known_args()
 

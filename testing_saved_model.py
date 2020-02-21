@@ -5,7 +5,7 @@ import numpy as np
 from argparse import ArgumentParser
 import tensorflow as tf
 import pickle, os
-from net import RNN
+from net import SignalNet
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -26,7 +26,7 @@ def do_regression(args):
         args.batch_size)
 
     # setup model
-    model = RNN(args.batch_size)
+    model = SignalNet(args.batch_size)
     ckpt = tf.train.Checkpoint(model=model)
     path = tf.train.latest_checkpoint(args.results_dir)
     ckpt.restore(path)
