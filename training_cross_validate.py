@@ -1,124 +1,111 @@
 # Author: Michał Bednarek PUT Poznan
 # Comment: RNN + FC network implemented in Tensorflow for regression of stiffness of the gripped object.
 
-import numpy as np
-from argparse import ArgumentParser
-import tensorflow as tf
-import pickle
 import os
+import pickle
+from argparse import ArgumentParser
 
+import numpy as np
+import tensorflow as tf
 from sklearn.model_selection import KFold
 from tqdm import tqdm
-from net import RNN
-from functions import *
 
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-tf.enable_eager_execution(config)
-tf.keras.backend.set_session(tf.Session(config=config))
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from functions import *
+from net import RNN
 
 
 def do_regression(args):
+    os.makedirs(args.results, exist_ok=True)
+
+    # load datasets
     with open(args.data_path_train, "rb") as fp:
         train_dataset = pickle.load(fp)
-        train_mean = np.mean(train_dataset["data"], axis=(0, 1), keepdims=True)
-        train_std = np.std(train_dataset["data"], axis=(0, 1), keepdims=True)
 
-    unseen = None
-    if args.data_path_unseen is not "":
-        with open(args.data_path_unseen, "rb") as fp:
-            unseen = pickle.load(fp)
+    with open(args.data_path_validation, "rb") as fp:
+        validation_dataset = pickle.load(fp)
+
+    with open(args.data_path_unseen, "rb") as fp:
+        unseen_dataset = pickle.load(fp)
+
+    # create one total dataset for cross validation
+    total_dataset = {
+        "data": np.concatenate([train_dataset["data"], validation_dataset["data"]], 0),
+        "stiffness": np.concatenate([train_dataset["stiffness"], validation_dataset["stiffness"]], 0),
+    }
+
+    # get mean and stddev for standarization
+    train_mean = np.mean(total_dataset["data"], axis=(0, 1), keepdims=True)
+    train_std = np.std(total_dataset["data"], axis=(0, 1), keepdims=True)
 
     # start a cross validate training
     kf = KFold(n_splits=args.num_splits)
-    train_dataset["data"] = np.asarray(
-        train_dataset["data"])  # needed as an array, because train_idx, val_idx are returned this way
-    train_dataset["stiffness"] = np.asarray(train_dataset["stiffness"])
-    os.makedirs(args.results, exist_ok=True)
-    for split_no, (train_idx, val_idx) in enumerate(kf.split(train_dataset["data"], train_dataset["stiffness"])):
-        # create pickle to dump metrics from each split
+    for split_no, (train_idx, val_idx) in enumerate(kf.split(total_dataset["data"], total_dataset["stiffness"])):
+
+        # save split indexes
         logs_path = os.path.join(args.results, '{}'.format(split_no))
-        pickle_path = os.path.join(args.results, 'metrics_{}.pickle'.format(split_no, split_no))
-        metrics = open(pickle_path, 'wb')
+        print("Cross-validation, split no. {}. Saving dataset samples indexes...".format(split_no))
+        np.savetxt(logs_path + "{}_split_train_data_samples.txt".format(split_no), train_idx)
+        np.savetxt(logs_path + "{}_split_val_data_samples.txt".format(split_no), val_idx)
+        print("... saved.")
 
         # setup model
         model = RNN(args.batch_size)
 
-        # add eta decay
-        eta = tf.contrib.eager.Variable(1e-3)
-        eta_value = tf.train.exponential_decay(
-            1e-3,
-            tf.train.get_or_create_global_step(),
-            args.epochs,
-            0.99)
-        eta.assign(eta_value())
-
-        # setup optimizer and metrics
+        # setup optimization procedure
+        eta = tf.Variable(args.lr)
+        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 2000, 0.99)
+        eta.assign(eta_value(0))
         optimizer = tf.keras.optimizers.Adam(eta)
-        ckpt = tf.train.Checkpoint(optimizer=optimizer,
-                                   model=model,
-                                   optimizer_step=tf.train.get_or_create_global_step())
+        ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)
 
-        # create tensorflow writers and checkpoint saver
+        # restore from checkpoint
+        if args.restore:
+            path = tf.train.latest_checkpoint(logs_path)
+            ckpt.restore(path)
         ckpt_man = tf.train.CheckpointManager(ckpt, logs_path, max_to_keep=3)
+
+        # setup writers
         os.makedirs(logs_path, exist_ok=True)
-        train_writer, val_writer, unseen_writer = tf.contrib.summary.create_file_writer(
-            logs_path), tf.contrib.summary.create_file_writer(logs_path), tf.contrib.summary.create_file_writer(
-            logs_path)
+        train_writer = tf.summary.create_file_writer(logs_path)
+        val_writer = tf.summary.create_file_writer(logs_path)
+        unseen_writer = tf.summary.create_file_writer(logs_path)
 
         # create split datasets to tf generators
-        train_ds, val_ds = create_tf_generators(train_dataset, train_idx, val_idx, args.batch_size)
-        unseen_ds = None
-        if unseen is not None:
-            unseen_ds = tf.data.Dataset.from_tensor_slices((unseen["data"], unseen["stiffness"])) \
-                .batch(args.batch_size)
+        train_ds, val_ds, unseen_ds = create_tf_generators(total_dataset, unseen_dataset, train_idx, val_idx, args.batch_size)
 
-        # start training / add metrics to tensorboard and save results for postprocessing
+        # start training
         train_step, val_step, unseen_step = 0, 0, 0
-        train_results, val_results, unseen_results = list(), list(), list()
+        save_period = int(args.epochs * 0.2)
         for epoch in tqdm(range(args.epochs)):
-            train_step, train_metrics = train(model, train_writer, train_ds, train_mean, train_std, optimizer,
-                                              train_step)
-            val_step, val_metrics = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
+            train_step = train(model, train_writer, train_ds, train_mean, train_std, optimizer, train_step)
+            val_step = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
+            unseen_step = validate(model, unseen_writer, unseen_ds, train_mean, train_std, unseen_step,
+                                                   prefix="unseen")
 
-            # check the unseen dataset if needed and save to list
-            train_results.append(train_metrics)
-            val_results.append(val_metrics)
-            if unseen is not None and unseen_ds is not None:
-                unseen_step, unseen_metrics = validate(model, unseen_writer, unseen_ds, train_mean, train_std,
-                                                       unseen_step, prefix="unseen")
-                unseen_results.append(unseen_metrics)
+            # assign eta
+            eta.assign(eta_value(0))
 
-            # assign eta and reset the metrics for the next epoch
-            eta.assign(eta_value())
-
-            # save each 10 epochs
-            if epoch % 10 == 0:
+            # save each save_period
+            if epoch % save_period == 0:
                 ckpt_man.save()
-
-        # dump data to the pickle
-        obj = {
-            "split_training_results": train_results,
-            "split_validation_results": val_results
-        }
-        if unseen_ds is not None:
-            obj['split_unseen_results'] = unseen_results
-        pickle.dump(obj, metrics)
-        metrics.close()
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data-path-train', type=str,
                         default="./data/dataset/final_ds/mix/mix_ds_train.pickle")
-    parser.add_argument('--data-path-test', type=str,
-                        default="./data/dataset/final_ds/mix/mix_ds_test.pickle")
+    parser.add_argument('--data-path-validation', type=str,
+                        default="./data/dataset/final_ds/mix/mix_ds_val.pickle")
     parser.add_argument('--data-path-unseen', type=str,
                         default="./data/dataset/final_ds/mix/mix_ds_test.pickle")
-    parser.add_argument('--results', type=str, default="./data/logs/cross_validate_train_mix_test_real")
-    parser.add_argument('--epochs', type=int, default=3000)
+    parser.add_argument('--results', type=str, default="./data/logs/train_mix_test_real")
+    parser.add_argument('--epochs', type=int, default=3500)
     parser.add_argument('--batch-size', type=int, default=512)
     parser.add_argument('--num-splits', type=int, default=4)
+    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--restore', default=False, action='store_true')
     args, _ = parser.parse_known_args()
+
+    allow_memory_growth()
+
     do_regression(args)
