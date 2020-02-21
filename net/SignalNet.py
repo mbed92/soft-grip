@@ -11,17 +11,15 @@ class SignalNet(tf.keras.Model):
         self.batch_size = batch_size
         self.conv1d, _, self.fc = create_signal_network(batch_size,
                                                         num_outputs=1,
-                                                        conv_filters=[64, 64, 128, 128, 256],
-                                                        conv_kernels=[3, 3, 3, 3, 3],
-                                                        conv_strides=[2, 1, 2, 1, 2],
+                                                        conv_filters=[128, 128, 128],
+                                                        conv_kernels=[3, 3, 3],
+                                                        conv_strides=[2, 2, 2],
                                                         bilstm_units=[],
-                                                        fc_layers=[256, 128])
+                                                        fc_layers=[256])
 
     def call(self, inputs, training=None, mask=None):
         inputs = tf.cast(inputs, tf.float32)
-
-        x = inputs
-        x = self.conv1d(x, training=training)
+        x = self.conv1d(inputs, training=training)
         x = self.fc(x, training=training)
 
         return x

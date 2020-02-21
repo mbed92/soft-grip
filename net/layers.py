@@ -21,11 +21,12 @@ def create_signal_network(batch_size, num_outputs,
     # create conv1d blocks
     conv_net = tf.keras.Sequential()
     for i, (num_filters, kernel, stride) in enumerate(zip(conv_filters, conv_kernels, conv_strides)):
-        conv_net.add(tf.keras.layers.Conv1D(num_filters, kernel, stride, padding="SAME"))
-        conv_net.add(tf.keras.layers.BatchNormalization())
-        conv_net.add(tf.keras.layers.Activation("relu"))
+        conv_net.add(tf.keras.layers.Conv1D(num_filters, kernel, stride, padding="SAME",
+                                            activity_regularizer=tf.keras.regularizers.l2(0.001)))
 
-        if i != len(conv_filters):
+        if i != len(conv_filters) - 1:
+            conv_net.add(tf.keras.layers.BatchNormalization())
+            conv_net.add(tf.keras.layers.Activation("relu"))
             conv_net.add(tf.keras.layers.Dropout(dropout))
 
     # create bilstm modules
@@ -39,14 +40,16 @@ def create_signal_network(batch_size, num_outputs,
     # create output layer
     fc_net = tf.keras.Sequential()
     fc_net.add(tf.keras.layers.Flatten())
-    for fc_units in fc_layers:
-        fc_net.add(tf.keras.layers.Dense(fc_units))
-        fc_net.add(tf.keras.layers.BatchNormalization())
-        fc_net.add(tf.keras.layers.Activation("relu"))
-        fc_net.add(tf.keras.layers.Dropout(dropout))
+    for i, fc_units in enumerate(fc_layers):
+        fc_net.add(tf.keras.layers.Dense(fc_units, activity_regularizer=tf.keras.regularizers.l2(0.001)))
+
+        if i != len(fc_layers) - 1:
+            fc_net.add(tf.keras.layers.BatchNormalization())
+            fc_net.add(tf.keras.layers.Activation("relu"))
+            fc_net.add(tf.keras.layers.Dropout(dropout))
 
     # add number of outputs
-    if num_outputs is not None:
+    if num_outputs is not None and num_outputs >= 1:
         fc_net.add(tf.keras.layers.Dense(num_outputs, None))
 
     return conv_net, lstm_net, fc_net

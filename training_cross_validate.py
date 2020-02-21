@@ -18,15 +18,13 @@ def do_regression(args):
     os.makedirs(args.results, exist_ok=True)
 
     # load & crop data
-    start_idx = 25
-    stop_idx = 175
     with open(args.data_path_train, "rb") as fp:
         train_dataset = pickle.load(fp)
-        train_dataset["data"] = train_dataset["data"][:, start_idx:stop_idx, :]
+        train_dataset["data"] = train_dataset["data"]
 
     with open(args.data_path_validation, "rb") as fp:
         validation_dataset = pickle.load(fp)
-        validation_dataset["data"] = validation_dataset["data"][:, start_idx:stop_idx, :]
+        validation_dataset["data"] = validation_dataset["data"]
 
     with open(args.data_path_unseen, "rb") as fp:
         unseen_dataset = pickle.load(fp)
@@ -98,13 +96,13 @@ def do_regression(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data-path-train', type=str,
-                        default="./data/dataset/final_ds/mix/mix_ds_train.pickle")
+                        default="./data/dataset/final_ds/sim/sim_train.pickle")
     parser.add_argument('--data-path-validation', type=str,
-                        default="./data/dataset/final_ds/mix/mix_ds_val.pickle")
-    parser.add_argument('--data-path-unseen', type=str,
-                        default="./data/dataset/final_ds/mix/mix_ds_test.pickle")
+                        default="./data/dataset/final_ds/real/real_train.pickle")
+    parser.add_argument('--data-path-unseen', type=str, default="./data/dataset/final_ds/real/real_val.pickle")
+
     parser.add_argument('--results', type=str, default="./data/logs/train_mix_test_real")
-    parser.add_argument('--epochs', type=int, default=250)
+    parser.add_argument('--epochs', type=int, default=400)
     parser.add_argument('--batch-size', type=int, default=500)
     parser.add_argument('--num-splits', type=int, default=4)
     parser.add_argument('--lr', type=float, default=1e-2)

@@ -6,7 +6,13 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-path = "./data/dataset/final_ds/mix/mix_ds_train.pickle"
+path = "./data/dataset/final_ds/mix/mix_ds_test.pickle"
+
+
+def noised_modality(data, noise_mag: float = 0.2):
+    noise = np.random.uniform(-noise_mag, noise_mag, size=data.shape)
+    data += noise
+    return data
 
 
 def playground():
