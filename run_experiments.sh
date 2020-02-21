@@ -1,0 +1,3 @@
+nohup python training_cross_validate.py --lr 1e-4 --epochs 400 --data-path-train data/dataset/final_ds/sim/sim_train.pickle --data-path-validation data/dataset/final_ds/sim/sim_val.pickle --data-path-unseen data/dataset/final_ds/real/real_test.pickle --results data/logs/simulation_only --add-noise &
+nohup python training_cross_validate.py --lr 1e-3 --epochs 400 --data-path-train data/dataset/final_ds/sim/real_train.pickle --data-path-validation data/dataset/final_ds/real/real_val.pickle --data-path-unseen data/dataset/final_ds/real/real_test.pickle --results data/logs/continued_on_real --restore --restore-dir data/logs/simulation_only/0 &
+

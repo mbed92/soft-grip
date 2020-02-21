@@ -20,11 +20,9 @@ def do_regression(args):
     # load & crop data
     with open(args.data_path_train, "rb") as fp:
         train_dataset = pickle.load(fp)
-        train_dataset["data"] = train_dataset["data"]
 
     with open(args.data_path_validation, "rb") as fp:
         validation_dataset = pickle.load(fp)
-        validation_dataset["data"] = validation_dataset["data"]
 
     with open(args.data_path_unseen, "rb") as fp:
         unseen_dataset = pickle.load(fp)
@@ -55,7 +53,7 @@ def do_regression(args):
 
         # setup optimization procedure
         eta = tf.Variable(args.lr)
-        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 1000, 0.98)
+        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 1000, 0.99)
         eta.assign(eta_value(0))
         optimizer = tf.keras.optimizers.Adam(eta)
         ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)
@@ -80,7 +78,7 @@ def do_regression(args):
         train_step, val_step, unseen_step = 0, 0, 0
         save_period = int(args.epochs * 0.2)
         for epoch in tqdm(range(args.epochs)):
-            train_step = train(model, train_writer, train_ds, train_mean, train_std, optimizer, train_step)
+            train_step = train(model, train_writer, train_ds, train_mean, train_std, optimizer, train_step, add_noise=args.add_noise)
             val_step = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
             unseen_step = validate(model, unseen_writer, unseen_ds, train_mean, train_std, unseen_step,
                                    prefix="unseen")
@@ -95,18 +93,18 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str,
-                        default="./data/dataset/final_ds/sim/sim_train.pickle")
-    parser.add_argument('--data-path-validation', type=str,
-                        default="./data/dataset/final_ds/real/real_train.pickle")
-    parser.add_argument('--data-path-unseen', type=str, default="./data/dataset/final_ds/real/real_val.pickle")
+    parser.add_argument('--data-path-train', type=str, default="./data/dataset/final_ds/real/real_train.pickle")
+    parser.add_argument('--data-path-validation', type=str, default="./data/dataset/final_ds/real/real_val.pickle")
+    parser.add_argument('--data-path-unseen', type=str, default="data/dataset/final_ds/real/real_test.pickle")
 
-    parser.add_argument('--results', type=str, default="./data/logs/train_mix_test_real")
+    parser.add_argument('--results', type=str, default="data/logs/train_real_test_real")
+    parser.add_argument('--restore-dir', type=str, default="data/logs/train_mix_test_real")
     parser.add_argument('--epochs', type=int, default=400)
     parser.add_argument('--batch-size', type=int, default=500)
-    parser.add_argument('--num-splits', type=int, default=4)
-    parser.add_argument('--lr', type=float, default=1e-2)
-    parser.add_argument('--restore', default=False, action='store_true')
+    parser.add_argument('--num-splits', type=int, default=5)
+    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--restore', default=True, action='store_true')
+    parser.add_argument('--add-noise', default=False, action='store_true')
     args, _ = parser.parse_known_args()
 
     allow_memory_growth()

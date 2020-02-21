@@ -2,13 +2,12 @@ import tensorflow as tf
 
 
 def create_tf_generators(train_dataset, test_dataset, train_idx, val_idx, batch_size):
-
-    train_x = train_dataset["data"][train_idx]
-    train_y = train_dataset["stiffness"][train_idx]
+    train_x = train_dataset["data"][train_idx.astype(int)]
+    train_y = train_dataset["stiffness"][train_idx.astype(int)]
     num_samples = train_x.shape[0]
 
-    val_x = train_dataset["data"][val_idx]
-    val_y = train_dataset["stiffness"][val_idx]
+    val_x = train_dataset["data"][val_idx.astype(int)]
+    val_y = train_dataset["stiffness"][val_idx.astype(int)]
 
     train_ds = tf.data.Dataset.from_tensor_slices((train_x, train_y)) \
         .shuffle(num_samples) \

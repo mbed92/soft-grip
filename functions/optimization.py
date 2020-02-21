@@ -9,7 +9,7 @@ def noised_modality(data, noise_mag: float = 20):
     return data
 
 
-def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train"):
+def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train", add_noise=False):
     metrics = [
         tf.keras.metrics.RootMeanSquaredError(name="RootMeanSquaredError"),
         tf.keras.metrics.MeanAbsoluteError(name="MeanAbsoluteError"),
@@ -21,7 +21,7 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train
     for i, (x_train, y_train) in enumerate(ds):
 
         # add noise for each 10 samples
-        if i % 10 == 0:
+        if add_noise and i % 10 == 0:
             x_train = noised_modality(x_train, 10)
 
         x_train, y_train = tf.cast(x_train, tf.float32), tf.cast(y_train, tf.float32)
