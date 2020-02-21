@@ -53,7 +53,7 @@ def do_regression(args):
 
         # setup optimization procedure
         eta = tf.Variable(args.lr)
-        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 1000, 0.99)
+        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 500, 0.99)
         eta.assign(eta_value(0))
         optimizer = tf.keras.optimizers.Adam(eta)
         ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)

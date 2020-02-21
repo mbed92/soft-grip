@@ -3,7 +3,7 @@ import tensorflow as tf
 from .utils import add_to_tensorboard, optimize
 
 
-def noised_modality(data, noise_mag: float = 20):
+def noised_modality(data, noise_mag: float = 20.0):
     noise = tf.random.uniform(minval=-noise_mag, maxval=noise_mag, shape=data.get_shape(), dtype=data.dtype)
     data += noise
     return data
@@ -21,8 +21,8 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train
     for i, (x_train, y_train) in enumerate(ds):
 
         # add noise for each 10 samples
-        if add_noise and i % 10 == 0:
-            x_train = noised_modality(x_train, 10)
+        if add_noise:
+            x_train = noised_modality(x_train, 20.0)
 
         x_train, y_train = tf.cast(x_train, tf.float32), tf.cast(y_train, tf.float32)
 
