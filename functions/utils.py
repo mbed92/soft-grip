@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 
 
@@ -16,7 +17,10 @@ def create_tf_generators(train_dataset, test_dataset, train_idx, val_idx, batch_
     val_ds = tf.data.Dataset.from_tensor_slices((val_x, val_y)).batch(batch_size)
     test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"])).batch(batch_size)
 
-    return train_ds, val_ds, test_ds
+    train_mean = np.mean(train_x, axis=(0, 1), keepdims=True)
+    train_std = np.std(train_x, axis=(0, 1), keepdims=True)
+
+    return train_ds, val_ds, test_ds, train_mean, train_std
 
 
 def add_to_tensorboard(scalars: dict, step: int, prefix: str):

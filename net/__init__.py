@@ -1,1 +1,1 @@
-from .SignalNet import SignalNet
+from .NeuralNets import ConvLstmNet, ConvNet

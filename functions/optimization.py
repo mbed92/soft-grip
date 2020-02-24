@@ -20,9 +20,9 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train
 
     for i, (x_train, y_train) in enumerate(ds):
 
-        # add noise for each 10 samples
+        # add noise
         if add_noise:
-            x_train = noised_modality(x_train, 20.0)
+            x_train = noised_modality(x_train, 2.0)
 
         x_train, y_train = tf.cast(x_train, tf.float32), tf.cast(y_train, tf.float32)
 
@@ -30,7 +30,7 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train
             predictions = model((x_train - mean) / std, training=True)
 
             vars = model.trainable_variables
-            l2_reg = tf.add_n([tf.nn.l2_loss(v) for v in vars]) * 0.001
+            l2_reg = tf.add_n([tf.nn.l2_loss(tf.cast(v, tf.float32)) for v in vars]) * 0.001
             loss = tf.losses.mean_absolute_error(y_train, predictions) + l2_reg
             loss = tf.reduce_mean(loss)
 
