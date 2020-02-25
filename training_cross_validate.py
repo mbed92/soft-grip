@@ -106,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('--restore', default=False, action='store_true')
     parser.add_argument('--restore-dir', type=str, default="")
 
-    parser.add_argument('--model-type', type=str, default="conv", choices=['conv', 'lstm', 'conv_lstm'], )
+    parser.add_argument('--model-type', type=str, default="conv_lstm", choices=['conv', 'lstm', 'conv_lstm'], )
 
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=100)

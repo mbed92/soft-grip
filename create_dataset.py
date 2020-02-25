@@ -2,14 +2,16 @@
 # Comment: Script gor generating data from Mujoco simulation for deep learning
 # models. Data saved as a pickle. Each sample is a MAX_ITER_PER_EP samples of squeezing.
 
-from argparse import ArgumentParser
-from environment import ManEnv
-import numpy as np
 import os
-from tqdm import tqdm
 import pickle
+from argparse import ArgumentParser
 
-NUM_EPISODES = 500
+import numpy as np
+from tqdm import tqdm
+
+from environment import ManEnv
+
+NUM_EPISODES = 1333
 MAX_ITER_PER_EP = 160
 OPEN_CLOSE_DIV = 80
 START_STEP = 40
@@ -29,6 +31,7 @@ def log_into_file(args):
     data, stiffness = list(), list()
 
     for ep in tqdm(range(NUM_EPISODES * num_envs)):
+
         current_stiffness = env.reset()
         # print(current_stiffness)
 
@@ -83,8 +86,8 @@ if __name__ == '__main__':
     parser.add_argument('--vis', type=bool, default=False)
     parser.add_argument('--mask-contact', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
-    parser.add_argument('--data-folder', type=str, default="./data/dataset/final_ds/sim")
-    parser.add_argument('--data-name', type=str, default="sim_test")
+    parser.add_argument('--data-folder', type=str, default="./data/dataset/testing_datasets")
+    parser.add_argument('--data-name', type=str, default="dataset_all_shapes")
     parser.add_argument('--mujoco-model-paths', nargs="+", required=True)
     args, _ = parser.parse_known_args()
     log_into_file(args)
