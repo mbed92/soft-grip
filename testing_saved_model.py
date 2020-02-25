@@ -22,20 +22,26 @@ def do_regression(args):
     with open(args.data_path_validation, "rb") as fp:
         validation_dataset = pickle.load(fp)
 
+    # create one total dataset for cross validation
+    if args.num_val_samples < 1:
+        total_dataset = {
+            "data": np.concatenate([train_dataset["data"], validation_dataset["data"]], 0),
+            "stiffness": np.concatenate([train_dataset["stiffness"], validation_dataset["stiffness"]], 0),
+        }
+    else:
+        total_dataset = {
+            "data": np.concatenate([train_dataset["data"], validation_dataset["data"][:args.num_val_samples]], 0),
+            "stiffness": np.concatenate(
+                [train_dataset["stiffness"], validation_dataset["stiffness"][:args.num_val_samples]], 0),
+        }
+
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
-
-    # create one total dataset for cross validation
-    total_dataset = {
-        "data": np.concatenate([train_dataset["data"], validation_dataset["data"]], 0),
-        "stiffness": np.concatenate([train_dataset["stiffness"], validation_dataset["stiffness"]], 0),
-    }
 
     # get mean and stddev for standarization
     train_mean = np.mean(total_dataset["data"], axis=(0, 1), keepdims=True)
     train_std = np.std(total_dataset["data"], axis=(0, 1), keepdims=True)
 
-    # setup model
     # setup model
     if args.model_type == "conv":
         model = ConvNet(args.batch_size)
@@ -47,7 +53,8 @@ def do_regression(args):
         model = ConvNet(args.batch_size)
 
     ckpt = tf.train.Checkpoint(model=model)
-    ckpt.restore(args.restore_path)
+    path = tf.train.latest_checkpoint(args.restore_path)
+    ckpt.restore(path)
 
     # start testing
     metrics = [
@@ -80,13 +87,14 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str, default="./data/dataset/final_ds/sim/sim_train.pickle")
-    parser.add_argument('--data-path-validation', type=str, default="./data/dataset/final_ds/sim/sim_val.pickle")
+    parser.add_argument('--data-path-train', type=str, default="data/dataset/final_ds/sim/sim_train.pickle")
+    parser.add_argument('--data-path-validation', type=str, default="data/dataset/final_ds/sim/sim_val.pickle")
     parser.add_argument('--data-path-test', type=str, default="data/dataset/40_10_60/real_dataset_test.pickle")
     parser.add_argument('--model-type', type=str, default="conv", choices=['conv', 'lstm', 'conv_lstm'], )
-    parser.add_argument('--restore-path', type=str, default="data/logs/train_sim_test_real_add_noise/0/ckpt-4")
+    parser.add_argument('--restore-path', type=str, default="data/logs/train_conv/0")
     parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--batch-size', type=int, default=1)
+    parser.add_argument('--num-val-samples', type=int, default=-1)
     args, _ = parser.parse_known_args()
 
     if args.model_type not in ['conv', 'lstm', 'conv_lstm']:

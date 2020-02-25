@@ -2,13 +2,19 @@ import numpy as np
 import tensorflow as tf
 
 
-def create_tf_generators(train_dataset, test_dataset, train_idx, val_idx, batch_size):
-    train_x = train_dataset["data"][train_idx.astype(int)]
-    train_y = train_dataset["stiffness"][train_idx.astype(int)]
+def create_tf_generators(train_dataset, test_dataset, train_idx, val_idx, batch_size, real_data=None, add_real_data=None):
+    train_x = np.array(train_dataset["data"])[train_idx.tolist()]
+    train_y = np.array(train_dataset["stiffness"])[train_idx.tolist()]
+
+    # append real data samples if needed
+    if add_real_data:
+        train_x = np.concatenate([train_x, real_data["data"]], 0)
+        train_y = np.concatenate([train_y, real_data["stiffness"]], 0)
+
     num_samples = train_x.shape[0]
 
-    val_x = train_dataset["data"][val_idx.astype(int)]
-    val_y = train_dataset["stiffness"][val_idx.astype(int)]
+    val_x = np.array(train_dataset["data"])[val_idx.tolist()]
+    val_y = np.array(train_dataset["stiffness"])[val_idx.tolist()]
 
     train_ds = tf.data.Dataset.from_tensor_slices((train_x, train_y)) \
         .shuffle(num_samples) \

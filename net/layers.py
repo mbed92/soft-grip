@@ -15,19 +15,17 @@ def create_signal_network(batch_size, num_outputs,
                           conv_kernels: list = (3, 3),
                           conv_strides: list = (2, 2),
                           bilstm_units: list = (64,),
-                          fc_layers: list = (64,), dropout=0.3):
+                          fc_layers: list = (64,)):
     assert len(conv_strides) == len(conv_kernels) == len(conv_filters)
 
     # create conv1d blocks
     conv_net = tf.keras.Sequential()
     for i, (num_filters, kernel, stride) in enumerate(zip(conv_filters, conv_kernels, conv_strides)):
-        conv_net.add(tf.keras.layers.Conv1D(num_filters, kernel, stride, padding="SAME",
-                                            activity_regularizer=tf.keras.regularizers.l2(0.001)))
+        conv_net.add(tf.keras.layers.Conv1D(num_filters, kernel, stride, padding="SAME"))
 
         if i != len(conv_filters) - 1:
             conv_net.add(tf.keras.layers.BatchNormalization())
             conv_net.add(tf.keras.layers.Activation("relu"))
-            conv_net.add(tf.keras.layers.Dropout(dropout))
 
     # create bilstm modules
     lstm_net = tf.keras.Sequential()
@@ -41,12 +39,11 @@ def create_signal_network(batch_size, num_outputs,
     fc_net = tf.keras.Sequential()
     fc_net.add(tf.keras.layers.Flatten())
     for i, fc_units in enumerate(fc_layers):
-        fc_net.add(tf.keras.layers.Dense(fc_units, activity_regularizer=tf.keras.regularizers.l2(0.001)))
+        fc_net.add(tf.keras.layers.Dense(fc_units))
 
         if i != len(fc_layers) - 1:
             fc_net.add(tf.keras.layers.BatchNormalization())
             fc_net.add(tf.keras.layers.Activation("relu"))
-            fc_net.add(tf.keras.layers.Dropout(dropout))
 
     # add number of outputs
     if num_outputs is not None and num_outputs >= 1:

@@ -17,21 +17,16 @@ from net import *
 def do_regression(args):
     os.makedirs(args.results, exist_ok=True)
 
-    # load & crop data
     with open(args.data_path_train, "rb") as fp:
-        train_dataset = pickle.load(fp)
+        total_dataset = pickle.load(fp)
 
     with open(args.data_path_validation, "rb") as fp:
         validation_dataset = pickle.load(fp)
+        validation_dataset["data"] = validation_dataset["data"][:args.num_val_samples]
+        validation_dataset["stiffness"] = validation_dataset["stiffness"][:args.num_val_samples]
 
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
-
-    # create one total dataset for cross validation
-    total_dataset = {
-        "data": np.concatenate([train_dataset["data"], validation_dataset["data"]], 0),
-        "stiffness": np.concatenate([train_dataset["stiffness"], validation_dataset["stiffness"]], 0),
-    }
 
     # start a cross validate training
     kf = KFold(n_splits=args.num_splits)
@@ -56,7 +51,7 @@ def do_regression(args):
 
         # setup optimization procedure
         eta = tf.Variable(args.lr)
-        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 500, 0.99)
+        eta_value = tf.keras.optimizers.schedules.ExponentialDecay(args.lr, 100, 0.99)
         eta.assign(eta_value(0))
         optimizer = tf.keras.optimizers.Adam(eta)
         ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)
@@ -75,43 +70,47 @@ def do_regression(args):
 
         # create split datasets to tf generators
         train_ds, val_ds, test_ds, train_mean, train_std = create_tf_generators(total_dataset, test_dataset, train_idx,
-                                                                                val_idx,
-                                                                                args.batch_size)
+                                                                                val_idx, args.batch_size,
+                                                                                real_data=validation_dataset,
+                                                                                add_real_data=args.add_validation_to_train)
 
         # start training
         train_step, val_step, test_step = 0, 0, 0
-        save_period = int(args.epochs * 0.1)
-        for epoch in tqdm(range(args.epochs)):
+        best_metric = 999999999.0
+        for _ in tqdm(range(args.epochs)):
             train_step = train(model, train_writer, train_ds, train_mean, train_std, optimizer, train_step,
                                add_noise=args.add_noise)
-            val_step = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
-            test_step = validate(model, test_writer, test_ds, train_mean, train_std, test_step,
-                                 prefix="test")
+            val_step, _, _ = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
+            test_step, best_metric, save_model = validate(model, test_writer, test_ds, train_mean, train_std, test_step,
+                                                          prefix="test", best_metric=best_metric)
 
             # assign eta
             eta.assign(eta_value(0))
 
             # save each save_period
-            if epoch % save_period == 0:
+            if save_model:
                 ckpt_man.save()
+                print("Best MAPE model saved.")
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--data-path-train', type=str, default="data/dataset/final_ds/sim/sim_train.pickle")
-    parser.add_argument('--data-path-validation', type=str, default="data/dataset/40_10_60/real_dataset_train.pickle")
+    parser.add_argument('--data-path-train', type=str, default="data/dataset/40_10_60/real_dataset_train.pickle")
+    parser.add_argument('--data-path-validation', type=str, default="data/dataset/40_10_60/real_dataset_val.pickle")
     parser.add_argument('--data-path-test', type=str, default="data/dataset/40_10_60/real_dataset_test.pickle")
-    parser.add_argument('--results', type=str, default="data/logs/train_real_test_real")
+    parser.add_argument('--results', type=str, default="data/logs/test_test")
 
     parser.add_argument('--restore', default=False, action='store_true')
+    parser.add_argument('--add-validation-to-train', default=False, action='store_true')
     parser.add_argument('--restore-dir', type=str, default="")
 
     parser.add_argument('--model-type', type=str, default="conv", choices=['conv', 'lstm', 'conv_lstm'], )
 
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=500)
+    parser.add_argument('--num-val-samples', type=int, default=-1)
+    parser.add_argument('--batch-size', type=int, default=100)
     parser.add_argument('--num-splits', type=int, default=5)
-    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float, default=1e-2)
 
     parser.add_argument('--add-noise', default=False, action='store_true')
     args, _ = parser.parse_known_args()
