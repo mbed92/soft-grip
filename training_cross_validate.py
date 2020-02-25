@@ -19,17 +19,18 @@ def do_regression(args):
 
     with open(args.data_path_train, "rb") as fp:
         total_dataset = pickle.load(fp)
+        print("TRAIN NUM SAMPLES: {}".format(len(total_dataset["data"])))
 
     with open(args.data_path_validation, "rb") as fp:
         validation_dataset = pickle.load(fp)
-        validation_dataset["data"] = validation_dataset["data"][:args.num_val_samples]
-        validation_dataset["stiffness"] = validation_dataset["stiffness"][:args.num_val_samples]
+        print("TO-ADD NUM SAMPLES: {}".format(len(validation_dataset["data"])))
 
     with open(args.data_path_test, "rb") as fp:
         test_dataset = pickle.load(fp)
+        print("TEST NUM SAMPLES: {}".format(len(test_dataset["data"])))
 
     # start a cross validate training
-    kf = KFold(n_splits=args.num_splits)
+    kf = KFold(n_splits=args.num_splits, shuffle=True)
     for split_no, (train_idx, val_idx) in enumerate(kf.split(total_dataset["data"], total_dataset["stiffness"])):
 
         # save split indexes
@@ -95,22 +96,22 @@ def do_regression(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    parser.add_argument('--add-validation-to-train', default=False, action='store_true')
+
     parser.add_argument('--data-path-train', type=str, default="data/dataset/40_10_60/real_dataset_train.pickle")
     parser.add_argument('--data-path-validation', type=str, default="data/dataset/40_10_60/real_dataset_val.pickle")
     parser.add_argument('--data-path-test', type=str, default="data/dataset/40_10_60/real_dataset_test.pickle")
     parser.add_argument('--results', type=str, default="data/logs/test_test")
 
     parser.add_argument('--restore', default=False, action='store_true')
-    parser.add_argument('--add-validation-to-train', default=False, action='store_true')
     parser.add_argument('--restore-dir', type=str, default="")
 
     parser.add_argument('--model-type', type=str, default="conv", choices=['conv', 'lstm', 'conv_lstm'], )
 
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--num-val-samples', type=int, default=-1)
     parser.add_argument('--batch-size', type=int, default=100)
     parser.add_argument('--num-splits', type=int, default=5)
-    parser.add_argument('--lr', type=float, default=1e-2)
+    parser.add_argument('--lr', type=float, default=1e-3)
 
     parser.add_argument('--add-noise', default=False, action='store_true')
     args, _ = parser.parse_known_args()
@@ -121,4 +122,5 @@ if __name__ == '__main__':
 
     allow_memory_growth()
 
+    print("ARGUMENTS: {}".format(args))
     do_regression(args)

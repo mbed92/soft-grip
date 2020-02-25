@@ -11,10 +11,12 @@ def create_tf_generators(train_dataset, test_dataset, train_idx, val_idx, batch_
         train_x = np.concatenate([train_x, real_data["data"]], 0)
         train_y = np.concatenate([train_y, real_data["stiffness"]], 0)
 
+    print("TRAIN NUM SAMPLES IN FOLD: {}".format(train_x.shape[0]))
     num_samples = train_x.shape[0]
 
     val_x = np.array(train_dataset["data"])[val_idx.tolist()]
     val_y = np.array(train_dataset["stiffness"])[val_idx.tolist()]
+    print("TRAIN VAL SAMPLES IN FOLD: {}".format(val_x.shape[0]))
 
     train_ds = tf.data.Dataset.from_tensor_slices((train_x, train_y)) \
         .shuffle(num_samples) \

@@ -52,7 +52,7 @@ def playground():
         arr = np.where(labels == val, 1, 0)
         idx = np.argwhere(arr == 1).flatten()
 
-        idx_train, idx_val, idx_test = idx[:60], idx[60:70], idx[70:100]
+        idx_train, idx_val, idx_test = idx[:30], idx[30:40], idx[40:100]
 
         # samples split
         x_train, y_train = samples[idx_train, :, :], labels[idx_train]
