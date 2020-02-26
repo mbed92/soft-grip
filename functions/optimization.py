@@ -125,6 +125,7 @@ def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, pr
 def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, prefix="validation"):
     save_model = False
     if type(ds) is list and type(best_metric) is list and len(best_metric) == len(ds):
+        print("\n")
         for i, (sub_ds, metric) in enumerate(zip(ds, best_metric)):
             _, best, _ = _val(model, None, sub_ds, mean, std, None, metric, prefix, is_print=True)
             best_metric[i] = best
