@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def create_tf_generators(train_dataset, test_dataset, train_idx, val_idx, batch_size, real_data=None, add_real_data=None):
+def create_tf_generators(train_dataset, test_datasets, train_idx, val_idx, batch_size, real_data=None, add_real_data=None):
 
     if train_idx is not None and val_idx is not None:
         train_x = np.array(train_dataset["data"])[train_idx.tolist()]
@@ -31,12 +31,16 @@ def create_tf_generators(train_dataset, test_dataset, train_idx, val_idx, batch_
         .batch(batch_size)
 
     val_ds = tf.data.Dataset.from_tensor_slices((val_x, val_y)).batch(batch_size)
-    test_ds = tf.data.Dataset.from_tensor_slices((test_dataset["data"], test_dataset["stiffness"])).batch(batch_size)
+
+    test_ds_list = list()
+    for ds in test_datasets:
+        tds = tf.data.Dataset.from_tensor_slices((ds["data"], ds["stiffness"])).batch(batch_size)
+        test_ds_list.append(tds)
 
     train_mean = np.mean(train_x, axis=(0, 1), keepdims=True)
     train_std = np.std(train_x, axis=(0, 1), keepdims=True)
 
-    return train_ds, val_ds, test_ds, train_mean, train_std
+    return train_ds, val_ds, test_ds_list, train_mean, train_std
 
 
 def add_to_tensorboard(scalars: dict, step: int, prefix: str):

@@ -25,9 +25,12 @@ def do_regression(args):
         validation_dataset = pickle.load(fp)
         print("TO-ADD NUM SAMPLES: {}".format(len(validation_dataset["data"])))
 
-    with open(args.data_path_test, "rb") as fp:
-        test_dataset = pickle.load(fp)
-        print("TEST NUM SAMPLES: {}".format(len(test_dataset["data"])))
+    test_ds_list = list()
+    for test_ds_path in args.data_path_test:
+        with open(test_ds_path, "rb") as fp:
+            test_dataset = pickle.load(fp)
+            test_ds_list.append(test_dataset)
+            print("TEST NUM SAMPLES: {}".format(len(test_dataset["data"])))
 
     # start a cross validate training
     kf = KFold(n_splits=args.num_splits, shuffle=True)
@@ -70,18 +73,19 @@ def do_regression(args):
         test_writer = tf.summary.create_file_writer(logs_path + "/test")
 
         # create split datasets to tf generators
-        train_ds, val_ds, test_ds, train_mean, train_std = create_tf_generators(total_dataset, test_dataset, train_idx,
+        train_ds, val_ds, test_ds, train_mean, train_std = create_tf_generators(total_dataset, test_ds_list, train_idx,
                                                                                 val_idx, args.batch_size,
                                                                                 real_data=validation_dataset,
                                                                                 add_real_data=args.add_validation_to_train)
 
         # start training
         train_step, val_step, test_step = 0, 0, 0
-        best_metric = 999999999.0
+        best_metric = [999999999.0 for _ in range(len(test_ds_list))]
         for _ in tqdm(range(args.epochs)):
             train_step = train(model, train_writer, train_ds, train_mean, train_std, optimizer, train_step,
                                add_noise=args.add_noise)
             val_step, _, _ = validate(model, val_writer, val_ds, train_mean, train_std, val_step)
+
             test_step, best_metric, save_model = validate(model, test_writer, test_ds, train_mean, train_std, test_step,
                                                           prefix="test", best_metric=best_metric)
 
@@ -100,7 +104,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--data-path-train', type=str, default="data/dataset/40_10_60/real_dataset_train.pickle")
     parser.add_argument('--data-path-validation', type=str, default="data/dataset/40_10_60/real_dataset_val.pickle")
-    parser.add_argument('--data-path-test', type=str, default="data/dataset/40_10_60/real_dataset_test.pickle")
+
+    # parser.add_argument('--data-path-test', type=str, default="data/dataset/40_10_60/real_dataset_test.pickle")
+    parser.add_argument('--data-path-test', nargs="+", required=True)
+
     parser.add_argument('--results', type=str, default="data/logs/test_test")
 
     parser.add_argument('--restore', default=False, action='store_true')

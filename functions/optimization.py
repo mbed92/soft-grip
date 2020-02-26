@@ -69,7 +69,7 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train
     return previous_steps
 
 
-def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, prefix="validation"):
+def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, prefix="validation"):
     save_model = False
 
     metrics = [
@@ -82,7 +82,6 @@ def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, pre
     mae = tf.keras.metrics.MeanAbsoluteError(name="mae")
     loss_metric = tf.keras.metrics.Mean("Loss")
 
-    # best epoch metrics
     for x_val, y_val in ds:
         x_val, y_val = tf.cast(x_val, tf.float32), tf.cast(y_val, tf.float32)
 
@@ -98,12 +97,13 @@ def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, pre
         for m in metrics:
             m.update_state(y_val, predictions)
 
-    with writer.as_default():
-        add_to_tensorboard({
-            "metrics": metrics + [loss_metric]
-        }, previous_steps, prefix)
-        writer.flush()
-    previous_steps += 1
+    if writer is not None and previous_steps is not None:
+        with writer.as_default():
+            add_to_tensorboard({
+                "metrics": metrics + [loss_metric]
+            }, previous_steps, prefix)
+            writer.flush()
+        previous_steps += 1
 
     if best_metric is not None and save_metric.result().numpy() < best_metric:
         save_model = True
@@ -112,7 +112,20 @@ def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, pre
 
     for m in metrics + [loss_metric]:
         m.reset_states()
+
     save_metric.reset_states()
     mae.reset_states()
+
+    return previous_steps, best_metric, save_model
+
+
+def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, prefix="validation"):
+    save_model = False
+    if type(ds) is list and type(best_metric) is list and len(best_metric) == len(ds):
+        for i, sub_ds in enumerate(ds):
+            _val(model, None, sub_ds, mean, std, None, best_metric[i], prefix)
+
+    else:
+        previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric, prefix)
 
     return previous_steps, best_metric, save_model
