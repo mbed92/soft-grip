@@ -105,11 +105,13 @@ def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, pr
             writer.flush()
         previous_steps += 1
 
-    if best_metric is not None and save_metric.result().numpy() < best_metric:
-        save_model = True
-        best_metric = save_metric.result().numpy()
+    if best_metric is not None:
+        if save_metric.result().numpy() < best_metric:
+            save_model = True
+            best_metric = save_metric.result().numpy()
+
         if is_print:
-            print("Best test result MAE/MAPE: {} / {}".format(mae.result().numpy(), best_metric))
+            print("Current best test result MAE/MAPE: {} / {}".format(mae.result().numpy(), best_metric))
 
     for m in metrics + [loss_metric]:
         m.reset_states()
@@ -124,8 +126,8 @@ def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, pre
     save_model = False
     if type(ds) is list and type(best_metric) is list and len(best_metric) == len(ds):
         for i, (sub_ds, metric) in enumerate(zip(ds, best_metric)):
-            _, best, _ = _val(model, None, sub_ds, mean, std, None, metric, prefix, is_print=False)
-            print("Current best MAPE for test dataset {}: {}".format(i, best))
+            _, best, _ = _val(model, None, sub_ds, mean, std, None, metric, prefix, is_print=True)
+            best_metric[i] = best
         print("\n")
     else:
         previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric, prefix)
