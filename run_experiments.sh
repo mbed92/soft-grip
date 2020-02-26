@@ -1,6 +1,6 @@
 # stage 1 - pick the best architecture
-nohup python -u training_cross_validate.py --data-path-train data/dataset/final_ds/sim/sim_train.pickle --data-path-validation data/dataset/final_ds/sim/sim_val.pickle --data-path-test data/dataset/40_10_60/real_dataset_test.pickle --results data/logs/train_conv --model-type conv --epochs 50 &
-nohup python -u training_cross_validate.py --data-path-train data/dataset/final_ds/sim/sim_train.pickle --data-path-validation data/dataset/final_ds/sim/sim_val.pickle --data-path-test data/dataset/40_10_60/real_dataset_test.pickle --results data/logs/train_conv --model-type conv_lstm --epochs 50 &
+nohup python -u training_cross_validate.py --data-path-train data/dataset/final_ds/sim/sim_train.pickle --data-path-validation data/dataset/final_ds/sim/sim_val.pickle --data-path-test data/dataset/40_10_60/real_dataset_test.pickle --results data/logs/train_conv --model-type conv --epochs 50 > nohup.out &
+nohup python -u training_cross_validate.py --data-path-train data/dataset/final_ds/sim/sim_train.pickle --data-path-validation data/dataset/final_ds/sim/sim_val.pickle --data-path-test data/dataset/40_10_60/real_dataset_test.pickle --results data/logs/train_conv --model-type conv_lstm --epochs 50 > nohup.out &
 
 # stage 2 - check how much real data you need in order to ensure reliable performance on real data
 nohup python -u training_cross_validate.py --add-validation-to-train --add-noise --data-path-train data/dataset/final_ds/sim/sim_train.pickle --data-path-validation data/dataset/40_10_60/real_dataset_train_050.pickle --data-path-test data/dataset/40_10_60/real_dataset_test.pickle --results data/logs/02_train_sim_test_real_add_noise_050_real --model-type conv_lstm --epochs 100  > nohup1.out &&
@@ -9,4 +9,4 @@ nohup python -u training_cross_validate.py --add-validation-to-train --add-noise
 nohup python -u training_cross_validate.py --add-validation-to-train --add-noise --data-path-train data/dataset/final_ds/sim/sim_train.pickle --data-path-validation data/dataset/40_10_60/real_dataset_train_200.pickle --data-path-test data/dataset/40_10_60/real_dataset_test.pickle --results data/logs/02_train_sim_test_real_add_noise_200_real --model-type conv_lstm --epochs 100  > nohup4.out &&
 
 # stage 3 - verify that the neural network can be effectively used fof different shapes of squeezed objects
-#
+nohup python -u training_cross_validate.py --data-path-train data/dataset/testing_datasets/dataset_all_shapes.pickle --data-path-test data/dataset/testing_datasets/softball_testing.pickle data/dataset/testing_datasets/softbox_testing.pickle data/dataset/testing_datasets/softcylinder_testing.pickle --results data/logs/train_conv_lstm_all_shapes --model-type conv_lstm --epochs 50 > nohup.out &
