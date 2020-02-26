@@ -69,7 +69,7 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train
     return previous_steps
 
 
-def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, prefix="validation"):
+def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, prefix="validation", is_print=True):
     save_model = False
 
     metrics = [
@@ -108,7 +108,8 @@ def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, pr
     if best_metric is not None and save_metric.result().numpy() < best_metric:
         save_model = True
         best_metric = save_metric.result().numpy()
-        print("Best test result MAE/MAPE: {} / {}".format(mae.result().numpy(), best_metric))
+        if is_print:
+            print("Best test result MAE/MAPE: {} / {}".format(mae.result().numpy(), best_metric))
 
     for m in metrics + [loss_metric]:
         m.reset_states()
@@ -122,9 +123,10 @@ def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, pr
 def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, prefix="validation"):
     save_model = False
     if type(ds) is list and type(best_metric) is list and len(best_metric) == len(ds):
-        for i, sub_ds in enumerate(ds):
-            _val(model, None, sub_ds, mean, std, None, best_metric[i], prefix)
-
+        for i, (sub_ds, metric) in enumerate(zip(ds, best_metric)):
+            _, best, _ = _val(model, None, sub_ds, mean, std, None, metric, prefix, is_print=False)
+            print("Current best MAPE for test dataset {}: {}".format(i, best))
+        print("\n")
     else:
         previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric, prefix)
 
