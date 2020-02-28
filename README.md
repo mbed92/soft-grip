@@ -8,3 +8,5 @@ _Gaining a Sense of Touch. Physical Parameters Estimation using a Soft Gripper a
 
 In order to run it you have to obtain your own license for MujoCo. See [this link](https://www.roboti.us/license.html).
 
+Download datasets using this [link](https://drive.google.com/open?id=1QWRGwrybnB_h4CWV9gbPa0hndAyOrDXH) and extract it in the 
+*data* folder.  
