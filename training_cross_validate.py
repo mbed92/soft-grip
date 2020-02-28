@@ -52,6 +52,7 @@ def do_regression(args):
             model = ConvBiLstmNet(args.batch_size)
         else:
             model = ConvNet(args.batch_size)
+            print("default ConvNet created.")
 
         # setup optimization procedure
         eta = tf.Variable(args.lr)
