@@ -131,6 +131,8 @@ def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, pre
             best_metric[i] = best
         print("\n")
     else:
-        previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric, prefix)
+        best_metric = best_metric[0]
+        previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric,
+                                                       prefix)
 
     return previous_steps, best_metric, save_model
