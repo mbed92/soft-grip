@@ -6,12 +6,10 @@ from .utils import _add_to_tensorboard, _optimize, _type_check
 def noised_modality(data):
     # add accelerometer noise
     acc, gyro = data[:, :, :6], data[:, :, 6:]
-    # acc += tf.random.normal(mean=0.0, stddev=0.7, shape=acc.get_shape(), dtype=data.dtype)
-    acc += tf.random.uniform(minval=-0.5, maxval=0.5, shape=acc.get_shape(), dtype=data.dtype)
+    acc += tf.random.normal(mean=0.0, stddev=0.7, shape=acc.get_shape(), dtype=data.dtype)
 
     # add gyro noise
-    # gyro += tf.random.normal(mean=0.0, stddev=0.06, shape=gyro.get_shape(), dtype=data.dtype)
-    gyro += tf.random.uniform(minval=-0.5, maxval=0.5, shape=gyro.get_shape(), dtype=data.dtype)
+    gyro += tf.random.normal(mean=0.0, stddev=0.06, shape=gyro.get_shape(), dtype=data.dtype)
 
     return tf.concat([acc, gyro], -1)
 
