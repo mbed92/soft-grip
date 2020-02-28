@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from .utils import add_to_tensorboard, optimize
+from .utils import _add_to_tensorboard, _optimize, _type_check
 
 
 def noised_modality(data):
@@ -50,14 +50,14 @@ def train(model, writer, ds, mean, std, optimizer, previous_steps, prefix="train
             loss = tf.reduce_mean(loss)
             loss_metric.update_state(loss.numpy())
 
-        optimize(optimizer, tape, loss, model.trainable_variables)
+        _optimize(optimizer, tape, loss, model.trainable_variables)
 
         # gather stats
         for m in metrics:
             m.update_state(y_train, predictions)
 
         with writer.as_default():
-            add_to_tensorboard({
+            _add_to_tensorboard({
                 "metrics": metrics + [loss_metric]
             }, previous_steps, prefix)
         writer.flush()
@@ -99,7 +99,7 @@ def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, pr
 
     if writer is not None and previous_steps is not None:
         with writer.as_default():
-            add_to_tensorboard({
+            _add_to_tensorboard({
                 "metrics": metrics + [loss_metric]
             }, previous_steps, prefix)
             writer.flush()
@@ -122,19 +122,6 @@ def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, pr
     return previous_steps, best_metric, save_model
 
 
-def _type_check(val, ret_type, num_elements=None):
-    retval = False
-    if ret_type is not None and type(val) is ret_type:
-        if ret_type is list and num_elements is not None:
-            if len(val) == num_elements:
-                retval = True
-            else:
-                retval = False
-        else:
-            retval = True
-    return retval
-
-
 def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, prefix="validation"):
     save_model = False
     print("\n")
@@ -153,7 +140,8 @@ def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, pre
         else:
             print("Watch tensorboard.")
     else:
-        previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric, prefix)
+        previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric,
+                                                       prefix)
 
     print("\n")
     return previous_steps, best_metric, save_model

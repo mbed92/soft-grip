@@ -10,12 +10,12 @@ def create_bidir_lstm_layer(batch_size, lstm_units, return_sequences=False, drop
                                          input_shape=(batch_size, int(2 * lstm_units)))
 
 
-def create_signal_network(batch_size, num_outputs,
-                          conv_filters: list = (64, 64),
-                          conv_kernels: list = (3, 3),
-                          conv_strides: list = (2, 2),
-                          bilstm_units: list = (64,),
-                          fc_layers: list = (64,)):
+def _create_signal_network(batch_size, num_outputs,
+                           conv_filters: list = (64, 64),
+                           conv_kernels: list = (3, 3),
+                           conv_strides: list = (2, 2),
+                           bilstm_units: list = (64,),
+                           fc_layers: list = (64,)):
     assert len(conv_strides) == len(conv_kernels) == len(conv_filters)
 
     # create conv1d blocks

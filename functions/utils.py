@@ -43,13 +43,13 @@ def create_tf_generators(train_dataset, test_datasets, train_idx, val_idx, batch
     return train_ds, val_ds, test_ds_list, train_mean, train_std
 
 
-def add_to_tensorboard(scalars: dict, step: int, prefix: str):
+def _add_to_tensorboard(scalars: dict, step: int, prefix: str):
     for key in scalars:
         for m in scalars[key]:
             tf.summary.scalar('{}/{}'.format(prefix, m.name), m.result().numpy(), step=step)
 
 
-def optimize(optimizer, tape, loss, trainable_vars):
+def _optimize(optimizer, tape, loss, trainable_vars):
     gradients = tape.gradient(loss, trainable_vars)
     optimizer.apply_gradients(zip(gradients, trainable_vars))
 
@@ -64,3 +64,16 @@ def allow_memory_growth():
             print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
         except RuntimeError as e:
             print(e)
+
+
+def _type_check(val, ret_type, num_elements=None):
+    retval = False
+    if ret_type is not None and type(val) is ret_type:
+        if ret_type is list and num_elements is not None:
+            if len(val) == num_elements:
+                retval = True
+            else:
+                retval = False
+        else:
+            retval = True
+    return retval

@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from .layers import create_signal_network
+from .layers import _create_signal_network
 
 
 class ConvNet(tf.keras.Model):
@@ -9,13 +9,13 @@ class ConvNet(tf.keras.Model):
         super(ConvNet, self).__init__()
 
         self.batch_size = batch_size
-        self.conv1d, _, self.fc = create_signal_network(batch_size,
-                                                        num_outputs=1,
-                                                        conv_filters=[128, 256, 512],
-                                                        conv_kernels=[3, 3, 3],
-                                                        conv_strides=[2, 2, 2],
-                                                        bilstm_units=[],
-                                                        fc_layers=[512, 256, 128, 64])
+        self.conv1d, _, self.fc = _create_signal_network(batch_size,
+                                                         num_outputs=1,
+                                                         conv_filters=[128, 256, 512],
+                                                         conv_kernels=[3, 3, 3],
+                                                         conv_strides=[2, 2, 2],
+                                                         bilstm_units=[],
+                                                         fc_layers=[512, 256, 128, 64])
         self.pooling = tf.keras.layers.GlobalAveragePooling1D()
 
     def call(self, inputs, training=None, mask=None):
@@ -33,13 +33,13 @@ class ConvBiLstmNet(tf.keras.Model):
         super(ConvBiLstmNet, self).__init__()
 
         self.batch_size = batch_size
-        self.conv1d, self.lstm, self.fc = create_signal_network(batch_size,
-                                                                num_outputs=1,
-                                                                conv_filters=[128, 256, 256],
-                                                                conv_kernels=[3, 3, 3],
-                                                                conv_strides=[2, 2, 2],
-                                                                bilstm_units=[128],
-                                                                fc_layers=[512, 256, 128, 64])
+        self.conv1d, self.lstm, self.fc = _create_signal_network(batch_size,
+                                                                 num_outputs=1,
+                                                                 conv_filters=[128, 256, 256],
+                                                                 conv_kernels=[3, 3, 3],
+                                                                 conv_strides=[2, 2, 2],
+                                                                 bilstm_units=[128],
+                                                                 fc_layers=[512, 256, 128, 64])
         self.pooling = tf.keras.layers.GlobalAveragePooling1D()
 
     def call(self, inputs, training=None, mask=None):
@@ -57,13 +57,13 @@ class ConvLstmNet(tf.keras.Model):
         super(ConvLstmNet, self).__init__()
 
         self.batch_size = batch_size
-        self.conv1d, _, self.fc = create_signal_network(batch_size,
-                                                        num_outputs=1,
-                                                        conv_filters=[128, 256, 256],
-                                                        conv_kernels=[3, 3, 3],
-                                                        conv_strides=[2, 2, 2],
-                                                        bilstm_units=[],
-                                                        fc_layers=[512, 256, 128, 64])
+        self.conv1d, _, self.fc = _create_signal_network(batch_size,
+                                                         num_outputs=1,
+                                                         conv_filters=[128, 256, 256],
+                                                         conv_kernels=[3, 3, 3],
+                                                         conv_strides=[2, 2, 2],
+                                                         bilstm_units=[],
+                                                         fc_layers=[512, 256, 128, 64])
 
         self.lstm = tf.keras.Sequential([
             tf.keras.layers.LSTM(128, return_sequences=True, dtype=tf.float64, dropout=0.3),
