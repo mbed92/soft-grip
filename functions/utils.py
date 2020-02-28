@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 
 
-def create_tf_generators(train_dataset, test_datasets, train_idx, val_idx, batch_size, real_data=None, add_real_data=None):
-
+def create_tf_generators(train_dataset, test_datasets, train_idx, val_idx, batch_size, real_data=None,
+                         add_real_data=None):
     if train_idx is not None and val_idx is not None:
         train_x = np.array(train_dataset["data"])[train_idx.tolist()]
         train_y = np.array(train_dataset["stiffness"])[train_idx.tolist()]

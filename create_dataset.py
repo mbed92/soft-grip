@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from environment import ManEnv
 
-NUM_EPISODES = 1333
+NUM_EPISODES = 1
 MAX_ITER_PER_EP = 160
 OPEN_CLOSE_DIV = 80
 START_STEP = 40
@@ -83,7 +83,7 @@ def log_into_file(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--sim-step', type=int, default=7)
-    parser.add_argument('--vis', type=bool, default=False)
+    parser.add_argument('--vis', type=bool, default=True)
     parser.add_argument('--mask-contact', type=bool, default=False)
     parser.add_argument('--sim-start', type=int, default=1)
     parser.add_argument('--data-folder', type=str, default="./data/dataset/testing_datasets")

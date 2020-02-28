@@ -1,1 +1,1 @@
-from .NeuralNets import ConvLstmNet, ConvNet
+from .NeuralNets import ConvBiLstmNet, ConvLstmNet, ConvNet

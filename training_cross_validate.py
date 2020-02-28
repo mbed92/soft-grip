@@ -46,10 +46,10 @@ def do_regression(args):
         # setup model
         if args.model_type == "conv":
             model = ConvNet(args.batch_size)
-        elif args.model_type == "lstm":
-            raise NotImplementedError("LSTM-only model not implemented.")
         elif args.model_type == "conv_lstm":
             model = ConvLstmNet(args.batch_size)
+        elif args.model_type == "conv_bilstm":
+            model = ConvBiLstmNet(args.batch_size)
         else:
             model = ConvNet(args.batch_size)
 
@@ -105,7 +105,6 @@ if __name__ == '__main__':
     parser.add_argument('--data-path-train', type=str, default="data/dataset/40_10_60/real_dataset_train.pickle")
     parser.add_argument('--data-path-validation', type=str, default="data/dataset/40_10_60/real_dataset_val.pickle")
 
-    # parser.add_argument('--data-path-test', type=str, default="data/dataset/40_10_60/real_dataset_test.pickle")
     parser.add_argument('--data-path-test', nargs="+", required=True)
 
     parser.add_argument('--results', type=str, default="data/logs/test_test")
@@ -113,7 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('--restore', default=False, action='store_true')
     parser.add_argument('--restore-dir', type=str, default="")
 
-    parser.add_argument('--model-type', type=str, default="conv_lstm", choices=['conv', 'lstm', 'conv_lstm'], )
+    parser.add_argument('--model-type', type=str, default="conv_lstm", choices=['conv', 'conv_lstm', 'conv_bilstm'], )
 
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=100)

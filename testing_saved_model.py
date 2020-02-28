@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 
 from functions import allow_memory_growth, create_tf_generators
 from functions.optimization import normalize_predictions
-from net import ConvNet, ConvLstmNet
+from net import ConvNet, ConvBiLstmNet
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -45,7 +45,7 @@ def do_regression(args):
         elif args.model_type == "lstm":
             raise NotImplementedError("LSTM-only model not implemented.")
         elif args.model_type == "conv_lstm":
-            model = ConvLstmNet(args.batch_size)
+            model = ConvBiLstmNet(args.batch_size)
         else:
             model = ConvNet(args.batch_size)
 
