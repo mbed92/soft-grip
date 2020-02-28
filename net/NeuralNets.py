@@ -66,7 +66,8 @@ class ConvLstmNet(tf.keras.Model):
                                                         fc_layers=[512, 256, 128, 64])
 
         self.lstm = tf.keras.Sequential([
-            tf.keras.layers.LSTM(256, return_sequences=False, dtype=tf.float64, dropout=0.3)
+            tf.keras.layers.LSTM(128, return_sequences=True, dtype=tf.float64, dropout=0.3),
+            tf.keras.layers.LSTM(128, return_sequences=False, dtype=tf.float64, dropout=0.3)
         ])
         self.pooling = tf.keras.layers.GlobalAveragePooling1D()
 

@@ -122,17 +122,38 @@ def _val(model, writer, ds, mean, std, previous_steps=None, best_metric=None, pr
     return previous_steps, best_metric, save_model
 
 
+def _type_check(val, ret_type, num_elements=None):
+    retval = False
+    if ret_type is not None and type(val) is ret_type:
+        if ret_type is list and num_elements is not None:
+            if len(val) == num_elements:
+                retval = True
+            else:
+                retval = False
+        else:
+            retval = True
+    return retval
+
+
 def validate(model, writer, ds, mean, std, previous_steps, best_metric=None, prefix="validation"):
     save_model = False
-    if type(ds) is list and type(best_metric) is list and len(best_metric) == len(ds) and len(best_metric) > 1:
-        print("\n")
-        for i, (sub_ds, metric) in enumerate(zip(ds, best_metric)):
-            _, best, _ = _val(model, None, sub_ds, mean, std, None, metric, prefix, is_print=True)
-            best_metric[i] = best
-        print("\n")
-    else:
-        best_metric = best_metric[0]
-        previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric,
-                                                       prefix)
+    print("\n")
 
+    if _type_check(ds, list, 1) and _type_check(best_metric, list, 1):
+        if len(best_metric) > 1:
+            for i, (sub_ds, metric) in enumerate(zip(ds, best_metric)):
+                _, best, _ = _val(model, None, sub_ds, mean, std, None, metric, prefix, is_print=True)
+                best_metric[i] = best
+        elif len(best_metric) == 1:
+            best_metric = best_metric[0]
+            ds = ds[0]
+            previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric,
+                                                           prefix)
+            best_metric = [best_metric]
+        else:
+            print("Watch tensorboard.")
+    else:
+        previous_steps, best_metric, save_model = _val(model, writer, ds, mean, std, previous_steps, best_metric, prefix)
+
+    print("\n")
     return previous_steps, best_metric, save_model
