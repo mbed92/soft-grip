@@ -103,17 +103,17 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--add-validation-to-train', default=False, action='store_true')
 
-    parser.add_argument('--data-path-train', type=str, default="data/dataset/40_10_60/real_dataset_train.pickle")
-    parser.add_argument('--data-path-validation', type=str, default="data/dataset/40_10_60/real_dataset_val.pickle")
+    parser.add_argument('--data-path-train', type=str, default="./data/experiments/real_200_300/test.pickle")
+    parser.add_argument('--data-path-validation', type=str, default="./data/experiments/real_200_300/train_200.pickle")
 
     parser.add_argument('--data-path-test', nargs="+", required=True)
 
-    parser.add_argument('--results', type=str, default="data/logs/test_test")
+    parser.add_argument('--results', type=str, default="data/logs/real_test")
 
     parser.add_argument('--restore', default=False, action='store_true')
     parser.add_argument('--restore-dir', type=str, default="")
 
-    parser.add_argument('--model-type', type=str, default="conv_lstm", choices=['conv', 'conv_lstm', 'conv_bilstm'], )
+    parser.add_argument('--model-type', type=str, default="conv_bilstm", choices=['conv', 'conv_lstm', 'conv_bilstm'], )
 
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=100)
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     parser.add_argument('--add-noise', default=False, action='store_true')
     args, _ = parser.parse_known_args()
 
-    if args.model_type not in ['conv', 'lstm', 'conv_lstm']:
+    if args.model_type not in ['conv', 'lstm', 'conv_lstm', 'conv_bilstm']:
         parser.print_help()
         sys.exit(1)
 
