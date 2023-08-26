@@ -31,3 +31,5 @@ The following GitHub gist contains supplementary results for the paper:
 
 Additional experiments contains benchmark of the Fully Connected network
 of the comparable size as the ConvNet.
+
+Datasets: [link](https://drive.google.com/drive/folders/1fLb1GNbBVXK_LCYk2dSYM7Ob8gCudXBt?usp=sharing)
